@@ -13,8 +13,6 @@ const CartDrawerPopup = ({isVisible}) => {
     const [activeTab, setActiveTab] = useState(0);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showPaymentDetail, setShowPaymentDetail] = useState([]);
-    const [showProductDetail, setShowProductDetail] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState(null);
     const form = {cart_name: '', type: ''};
     const dispatch = useDispatch();
 
@@ -129,6 +127,10 @@ const CartDrawerPopup = ({isVisible}) => {
 
     if (!isVisible) return null;
 
+    useEffect(() => {
+        console.log('cartDrawerPopup');
+    }, [cartData]);
+
     return (
         <div onClick={closePopup}>
             <div id="drawer-update-product"
@@ -212,6 +214,8 @@ const CartDrawerPopup = ({isVisible}) => {
                             role="tabpanel"
                             aria-labelledby={`tab-${index}`}
                         >
+
+                            {/*show payment popup each cart*/}
                             {showPaymentDetail[index] &&
                                 <PaymentDetailPopup cart={cart} isVisible={showPaymentDetail[index]} index={index}
                                                     refetchData={fetchData}/>}
@@ -237,25 +241,25 @@ const CartDrawerPopup = ({isVisible}) => {
                                                              alt="Product"
                                                              className="w-full shadow-lg rounded-lg aspect-square"/>
                                                     </div>
-                                                    <div className="flex justify-between items-center h-full w-[88%]">
+                                                    <div className="flex justify-between h-full w-[88%]">
                                                         <div className="flex flex-col justify-between">
                                                             <div className="flex items-center">
-                                                                <div
-                                                                    className="font-semibold">{item.product_name} ({item.size})
-                                                                </div>
-                                                                <span
-                                                                    className="ml-2 text-sm text-gray-500">x{item.quantity}</span>
+                                                                <div className="font-semibold">{item.product_name} ({item.size})</div>
+                                                                <span className="ml-2 text-sm text-gray-500">x{item.quantity}</span>
                                                             </div>
-                                                            <span
-                                                                className="text-sm text-gray-500">Note: {item.note}</span>
-                                                            <span
-                                                                className="text-sm text-gray-500">Toppings: {item.count_topping} toppings</span>
+                                                            <span className="text-sm text-gray-500">Note: {item.note}</span>
+                                                            <span className="text-sm text-gray-500">Toppings: {item.count_topping} toppings</span>
                                                         </div>
-                                                        <div
-                                                            className="font-semibold">{formatVietnameseCurrency(item.total_price)}</div>
-                                                        <div>
+
+                                                        {/* buttons */}
+                                                        <div className="flex items-start space-x-1">
+                                                            {/* price */}
+                                                            <div className="font-semibold text-right mr-5 min-w-[100px]">{formatVietnameseCurrency(item.total_price)}</div>
+
+
+                                                            {/* button edit */}
                                                             <button
-                                                                className="text-gray-500 cursor-pointer hover:text-gray-700 rounded-full hover:bg-gray-200 p-1 mr-1"
+                                                                className="text-gray-500 cursor-pointer hover:text-gray-700 rounded-full hover:bg-gray-200 p-1"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleEditProduct(cart.order_id, item.id);
@@ -267,8 +271,10 @@ const CartDrawerPopup = ({isVisible}) => {
                                                                           d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/>
                                                                 </svg>
                                                             </button>
+
+                                                            {/* button delete*/}
                                                             <button
-                                                                className="text-red-500 cursor-pointer hover:text-red-700 rounded-full hover:bg-red-200 p-1 mr-1"
+                                                                className="text-red-500 cursor-pointer hover:text-red-700 rounded-full hover:bg-red-200 p-1"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleDeleteProduct(cart.order_id, item.id);

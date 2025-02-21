@@ -5,12 +5,12 @@ import {formatVietnameseCurrency} from '../../locales/currencyFormat.js';
 import {Button, TextInput} from 'flowbite-react';
 import {getCategories} from "../../redux/action/categoryAction.js";
 import {getAllProducts} from "../../redux/action/productAction.js";
-import DetailProductPopup from "../../components/popup/DetailProductPopup.jsx";
-import Marketing from "./models/Marketing.jsx";
 import ButtonElement from "../../components/element/ButtonElement.jsx";
 import debounce from "lodash/debounce";
 import {notify} from "../../layouts/notification/notify.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
+import Banner from "../../components/homepage/Banner.jsx";
+import Marketing from "./models/Marketing.jsx";
 
 const Menu = () => {
     //
@@ -90,7 +90,7 @@ const Menu = () => {
 
     const scrollToDiv = () => {
         window.scrollTo({
-            top: 400,
+            top: 520,
             behavior: 'smooth'
         });
     };
@@ -268,7 +268,7 @@ const Menu = () => {
                 </div>
 
                 {/* Right section : products */}
-                <div className="col-span-12 lg:col-span-9 grid grid-cols-1 lg:grid-cols-1 gap-0 lg:gap-4">
+                <div className="col-span-12 lg:col-span-9 grid grid-cols-1 lg:grid-cols-1 gap-0 lg:gap-4 mb-4">
                     {loading ? (
                         [...Array(3)].map((_, n) => (
                             <div key={n} className="mb-6">

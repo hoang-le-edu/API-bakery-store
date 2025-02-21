@@ -29,6 +29,8 @@ class User extends Authenticatable
         'user_type',
         'created_by',
         'firebase_uid',
+        'custom_token',
+        'is_admin',
 //        'team_id'
     ];
 

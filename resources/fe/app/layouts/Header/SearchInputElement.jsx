@@ -7,6 +7,7 @@ import React, {useState, useCallback, useEffect, useRef} from "react";
 import {getInputResult, getSingleProduct} from "../../redux/action/productAction";
 import SpinnerLoading from "../../components/loading/SpinnerLoading";
 import DetailProductPopup from "../../components/popup/DetailProductPopup.jsx";
+import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 
 const SearchInputElement = () => {
     const dispatch = useDispatch();
@@ -18,6 +19,8 @@ const SearchInputElement = () => {
     const [currentPopup, setCurrentPopup] = useState(null);
     const selectedProduct = useSelector(state => state.product.product);
     const inputContainerRef = useRef(null);
+
+    const {openPopup, closePopup} = usePopup();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -39,7 +42,7 @@ const SearchInputElement = () => {
 
     const handleSearchClick = (searchParams) => {
         setCloseInput(false);
-        openPopup('details', searchParams);
+        openPopup({popupName: 'details', productId: searchParams});
         // navigate(`/product/search/${searchParams}`);
         // goi popup detail product
 
@@ -52,20 +55,11 @@ const SearchInputElement = () => {
         []
     );
 
-    const handleSearchEnter = () => {
-        navigate(`/product/search/${searchParams}`);
-
-        // chuyen sang trang menu
-    };
-
-    // run effect
-    // useEffect(() => {
-    //   setResults(inputResults);
-    // }, [inputResults]);
-
-    // useEffect(() => {
-    //     console.log(searchParams);
-    // }, [searchParams]);
+    // const handleSearchEnter = () => {
+    //     navigate(`/menu/${searchParams}`);
+    //
+    //     // chuyen sang trang menu
+    // };
 
     useEffect(() => {
         if (searchParams) {
@@ -74,20 +68,6 @@ const SearchInputElement = () => {
         }
     }, [searchParams, debounceSearch]);
 
-    const openPopup = (popupName, productId = null) => {
-        if (popupName === 'details' && productId) {
-            dispatch(getSingleProduct(productId)).then(() => {
-                setCurrentPopup(popupName);
-            });
-        } else {
-            setCurrentPopup(popupName);
-        }
-    };
-
-    const closePopup = () => {
-        setCurrentPopup(null);
-    };
-
     return (
         <div ref={inputContainerRef}
              className="w-full max-w-[300px] md:max-w-[450px] lg:max-w-[550px] flex flex-row items-center relative">
@@ -95,7 +75,7 @@ const SearchInputElement = () => {
                 <DetailProductPopup isVisible={currentPopup === 'details'} selectedProduct={selectedProduct}
                                     onClose={closePopup}
                                     isEdit={false} id="detail-product"/>)}
-            <form onSubmit={handleSearchEnter} className="flex w-full items-center">
+            <form className="flex w-full items-center">
                 <input
                     type="search"
                     className="block outline-none w-full py-2 px-2 md:px-5 text-sm text-gray-900 border border-gray-300 rounded-lg "

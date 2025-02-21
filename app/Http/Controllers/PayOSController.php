@@ -54,6 +54,7 @@ class PayOSController extends Controller
                     "checkoutUrl" => $order->payment_link
                 ]);
             }
+
             // Initialize PayOS with your credentials
             $orderCode = intVal(str_replace('ORD', '', $order->order_number));
             // Prepare payment data
@@ -61,8 +62,8 @@ class PayOSController extends Controller
                 'orderCode' => $orderCode, // Unique order code
                 'amount' => intval($order->order_total), // Payment amount
                 'description' => '#' . $order->order_number, // Payment description
-                'returnUrl' => 'https://weevil-exotic-thankfully.ngrok-free.app', // Redirect URL after payment
-                'cancelUrl' => 'https://weevil-exotic-thankfully.ngrok-free.app', // Redirect URL if payment is canceled
+                'returnUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL after payment
+                'cancelUrl' => 'https://cd39-203-205-32-65.ngrok-free.app', // Redirect URL if payment is canceled
             ];
 
             try {
@@ -111,8 +112,8 @@ class PayOSController extends Controller
                 'orderCode' => $orderCode, // Unique order code
                 'amount' => intval($order->order_total), // Payment amount
                 'description' => '#' . $order->order_number, // Payment description
-                'returnUrl' => 'https://weevil-exotic-thankfully.ngrok-free.app', // Redirect URL after payment
-                'cancelUrl' => 'https://weevil-exotic-thankfully.ngrok-free.app', // Redirect URL if payment is canceled
+                'returnUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL after payment
+                'cancelUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL if payment is canceled
             ];
 
             try {

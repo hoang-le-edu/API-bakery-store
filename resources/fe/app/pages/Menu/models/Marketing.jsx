@@ -1,35 +1,75 @@
-import React from 'react';
-import '../Marketing.css';
+import React, {useEffect, useRef, useState} from "react";
+import {FaArrowLeft, FaArrowRight} from "react-icons/fa";
 
-const Marketing = ({ lang }) => {
+const Marketing = () => {
+    const images = import.meta.glob('/resources/fe/app/assets/marketing/*.{png,jpg,jpeg,svg}', {eager: true});
+    const currentImageIndexRef = useRef(0); // Dùng useRef thay vì useState
+    const imageRef = useRef(null); // Tham chiếu đến thẻ <img>
+    const [imageList, setImageList] = useState(Object.values(images).map(img => img.default));
+
+    // auto change imageList
+    useEffect(() => {
+        if (imageList.length > 0) {
+            const interval = setInterval(() => {
+                currentImageIndexRef.current = (currentImageIndexRef.current + 1) % imageList.length;
+                if (imageRef.current) {
+                    imageRef.current.src = imageList[currentImageIndexRef.current]; // Cập nhật ảnh trực tiếp
+                }
+            }, 3000); // 3s đổi ảnh một lần
+
+            return () => clearInterval(interval);
+        }
+    }, [imageList]);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    useEffect(() => {
+        scrollToTop();
+    }, []);
+
+    // style={{ backgroundImage: "url('/build/assets/Banner.svg')" }}
     return (
-        <div className="marketing flex flex-row justify-between items-center w-[90%] h-[200px] lg:w-[1100px] lg:h-[350px] m-auto mt-4 lg:mt-10">
-            <div className="market_content flex flex-col justify-between h-full pt-5 pl-5 pb-5 lg:pt-10 lg:pl-20 lg:pb-10">
-                {/*<button className="market_content_btn w-[130px] h-auto lg:w-[200px] lg:h-[50px] lg:ml-5">*/}
-                {/*    <label className="btn_text text-sm lg:text-xl">{lang('LBL_LIMIT')}</label>*/}
-                {/*</button>*/}
-                {/*<label className="market_content_label text-sm lg:text-2xl lg:ml-5">{lang('LBL_GET_DISCOUNT')}</label>*/}
-                {/*<div className="market_content_percent flex flex-row justify-start items-center lg:ml-20 ml-5">*/}
-                {/*    <label className="percent_label text-4xl lg:text-8xl">40%</label>*/}
-                {/*    <button className="percent_claim w-[60px] h-[20px] lg:w-[100px] lg:h-[50px] ml-5 lg:ml-10">*/}
-                {/*        <label className="btn_text text-sm lg:text-xl">{lang('LBL_GET_CLAIM')}</label>*/}
-                {/*    </button>*/}
-                {/*</div>*/}
-                {/*<div className="hidden md:block market_content_label text-sm lg:text-xl lg:ml-5">*/}
-                {/*    {lang('LBL_DURATION_1')} {lang('LBL_DURATION_2')}*/}
-                {/*</div>*/}
-                {/*<div className="block lg:hidden market_content_label text-sm lg:text-2xl lg:ml-5">*/}
-                {/*    {lang('LBL_DURATION_1')}*/}
-                {/*</div>*/}
-                {/*<div className="block lg:hidden market_content_label text-sm lg:text-2xl lg:ml-5">*/}
-                {/*    {lang('LBL_DURATION_3')}*/}
-                {/*</div>*/}
-            </div>
-            <div className="market_img">
-                <img className="w-[160px] h-[140px] lg:w-[400px] lg:h-[350px]" src="@/assets/images/downloaded_images/counpon_img.png" alt="123" />
-            </div>
-        </div>
+        <section
+            className="relative h-[480px] w-[1200px] flex items-center justify-center bg-cover bg-center mx-auto mt-8 rounded-2xl">
+            {/* Left Arrow Button */}
+            <button
+                onClick={() => {
+                    currentImageIndexRef.current = (currentImageIndexRef.current - 1 + imageList.length) % imageList.length;
+                    if (imageRef.current) {
+                        imageRef.current.src = imageList[currentImageIndexRef.current];
+                    }
+                }}
+                className="absolute left-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
+                <FaArrowLeft/>
+            </button>
+
+            {/* Image */}
+            <img
+                ref={imageRef}
+                src={imageList[0] || "@/assets/imageList/empty-image.jpg"}
+                alt="Product Image"
+                className="w-[1200px] h-[480px] object-cover rounded-lg"
+            />
+
+            {/* Right Arrow Button */}
+            <button
+                onClick={() => {
+                    currentImageIndexRef.current = (currentImageIndexRef.current + 1) % imageList.length;
+                    if (imageRef.current) {
+                        imageRef.current.src = imageList[currentImageIndexRef.current];
+                    }
+                }}
+                className="absolute right-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
+                <FaArrowRight/>
+            </button>
+        </section>
     );
 };
 
 export default Marketing;
+

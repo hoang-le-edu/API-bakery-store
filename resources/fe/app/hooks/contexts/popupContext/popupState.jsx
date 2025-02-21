@@ -13,8 +13,6 @@ export const PopupProvider = ({children}) => {
     const openPopup = (inputData) => {
         const popupData = {popupName: inputData.popupName};
 
-        console.log('inputData', inputData);
-
         Object.entries(inputData).forEach(([key, value]) => {
             popupData[key] = value;
         });

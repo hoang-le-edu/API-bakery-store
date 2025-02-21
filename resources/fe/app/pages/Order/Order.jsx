@@ -1,8 +1,5 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import OrderTabs from './models/OrderTabs';
+import React, {useCallback, useEffect, useState} from 'react';
 import OrderList from './models/OrderList';
-import FilterPopup from '../../components/popup/FilterPopup.jsx';
-import {getAllProducts} from "../../redux/action/productAction.js";
 import {getAllOrders} from "../../redux/action/orderAction.js";
 import {useDispatch, useSelector} from "react-redux";
 import debounce from "lodash/debounce";
@@ -19,12 +16,12 @@ const Order = () => {
     const newOrders = useSelector((state) => state.orders.orders);
     const [activeTab, setActiveTab] = useState('Wait For Approval');
     const tabs = [
-        { id: 'wait-confirmation', label: 'Wait For Approval' },
-        { id: 'in-progress', label: 'In Progress' },
-        { id: 'delivering', label: 'Delivering' },
-        { id: 'delivered', label: 'Delivered' },
-        { id: 'completed', label: 'Completed' },
-        { id: 'cancelled', label: 'Cancelled' },
+        {id: 'wait-confirmation', label: 'Wait For Approval'},
+        {id: 'in-progress', label: 'In Progress'},
+        {id: 'delivering', label: 'Delivering'},
+        {id: 'delivered', label: 'Delivered'},
+        {id: 'completed', label: 'Completed'},
+        {id: 'cancelled', label: 'Cancelled'},
     ];
     const [activeTabObject, setActiveTabObject] = useState('');
 
@@ -43,13 +40,13 @@ const Order = () => {
             if (loading) return;
             setLoading(true);
             const form = {
-            //     searchText: searchText,
-            //     category_id: selectedCategory,
-            //     min_price: filtersOption.minPrice,
-            //     max_price: filtersOption.maxPrice,
-            //     fromDate: filtersOption.fromDate,
-            //     toDate: filtersOption.toDate,
-            //     order: filtersOption.order,
+                //     searchText: searchText,
+                //     category_id: selectedCategory,
+                //     min_price: filtersOption.minPrice,
+                //     max_price: filtersOption.maxPrice,
+                //     fromDate: filtersOption.fromDate,
+                //     toDate: filtersOption.toDate,
+                //     order: filtersOption.order,
             };
 
             await dispatchOrder(getAllOrders(undefined, form));
@@ -63,19 +60,14 @@ const Order = () => {
         setActiveTab(activeTabNew.label);
     };
 
-    useEffect(() => {
-        console.log(activeTab);
-        console.log(listOrder?.[activeTab]);
-    }, [activeTab]);
-
     const changeSearchText = (e) => {
-    if (e.key === 'Enter') {
-      // Handle search text change
-    }
+        if (e.key === 'Enter') {
+            // Handle search text change
+        }
     };
 
     const refreshData = async () => {
-    // Refresh data
+        // Refresh data
     };
 
     return (
@@ -83,7 +75,7 @@ const Order = () => {
             <div className="flex p-6 gap-4 w-full h-full justify-center">
                 {/* Order Tabs*/}
                 <div>
-                    <span className="text-gray-500 text-3xl font-bold">Order history</span>
+                    <span className="text-gray-500 text-3xl font-bold whitespace-nowrap">Order history</span>
                     <div className="flex flex-col mb-4 border-b border-gray-200 dark:border-gray-700 mt-6">
                         <ul className="flex flex-wrap flex-col gap-3 -mb-px text-sm font-semibold text-center">
                             {tabs.map((tab) => (
@@ -106,7 +98,9 @@ const Order = () => {
 
                 {/* Order List*/}
                 <div className="flex flex-col mt-2 w-full">
+
                     {/* turn off filter features */}
+
                     {/*<div id="divToScroll" className="search flex flex-row items-center h-[38px] w-full">*/}
                     {/*      /!*  search *!/*/}
                     {/*      <div className="bg-white search_btn flex flex-row w-[71%] p-2 pl-1 h-full shadow-sm">*/}
@@ -158,11 +152,11 @@ const Order = () => {
                     {/*        <span className="text-white">Refresh</span>*/}
                     {/*      </Button>*/}
                     {/*</div>*/}
-                    {loading ? <SpinnerLoading/> : <OrderList orders={newOrders?.[activeTab]} />}
+                    {loading ? <SpinnerLoading/> : <OrderList orders={newOrders?.[activeTab]}/>}
                 </div>
             </div>
         </div>
-      );
-    };
+    );
+};
 
 export default Order;

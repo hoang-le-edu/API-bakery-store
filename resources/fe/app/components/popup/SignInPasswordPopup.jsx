@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import {resetStatus, setAccessTokenAndRole} from '../../redux/action/userAction.js';
+import {resetStatus} from '../../redux/action/userAction.js';
 import SpinnerLoading from '../loading/SpinnerLoading.jsx';
 import {doSignInWithEmailAndPassword, doSignInWithGoogle} from "../../modules/firebase/auth.js";
 import {notify} from "../../layouts/notification/notify.jsx";
@@ -24,7 +24,6 @@ const SignInPasswordPopup = ({isVisible, closePopup, switchPopup}) => {
             setIsSigningIn(true);
             try {
                 const data = await doSignInWithEmailAndPassword(inputRef.current.email, inputRef.current.password);
-                await dispatch(setAccessTokenAndRole(data));
                 setIsSigningIn(false);
                 closePopup();
                 notify('success', 'Login successfully');
@@ -45,7 +44,6 @@ const SignInPasswordPopup = ({isVisible, closePopup, switchPopup}) => {
                     setIsSigningIn(false);
                 }
                 else {
-                    await dispatch(setAccessTokenAndRole(data));
                     setIsSigningIn(false);
                     closePopup();
                     notify('success', 'Login successfully');
@@ -69,8 +67,8 @@ const SignInPasswordPopup = ({isVisible, closePopup, switchPopup}) => {
     if (!isVisible) return null;
 
     return (
-        <div className="overlay fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
-             onClick={closePopup}>
+        <div className="overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
+            onClick={closePopup}>
             <div className="bg-white rounded-lg shadow-lg w-[90%] md:w-1/2 lg:w-1/3 p-6"
                  onClick={(e) => e.stopPropagation()}>
                 <h2 className="text-xl font-bold text-center mb-4">Sign In</h2>

@@ -25,3 +25,5 @@ vite.config.js
 /resources/fe/app/modules
 /resources/js
 /resources/views
+/resources/assets
+/resources/css

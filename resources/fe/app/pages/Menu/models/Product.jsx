@@ -1,17 +1,16 @@
 import React, {useEffect, useState} from "react";
-import { useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import {useParams} from "react-router-dom";
+import {useDispatch, useSelector} from "react-redux";
 import ProductsCardElement from "../../../components/element/ProductsCardElement.jsx";
-import { getProductCategories } from "../../../redux/action/productAction.js";
 import ProductsCardLoading from "../../../components/loading/ProductsCardLoading.jsx";
 import ProductNotFound from "../../../components/product_search/ProductNotFound.jsx";
 import axios from "axios";
 import {mapProducts} from "../../../components/product_details/mapProduct.jsx";
 
 const Product = () => {
-    const { categories } = useParams();
+    const {categories} = useParams();
     const dispatch = useDispatch();
-    const { categoryProducts, loading } = useSelector(
+    const {categoryProducts, loading} = useSelector(
         (state) => state.categoryProducts
     );
     const [products, setProduct] = useState([]);
@@ -19,15 +18,15 @@ const Product = () => {
 
     useEffect(() => {
         const fetchProducts = async () => {
-        try {
-            const response = await axios.get(`/api/customer/products/${categories}`);
+            try {
+                const response = await axios.get(`/api/customer/products/${categories}`);
 
-            const products_fetched = mapProducts(response.data.data);
+                const products_fetched = mapProducts(response.data.data);
 
-            setProduct(products_fetched);
-        } catch (error) {
-            console.error("Error fetching categories:", error);
-        }
+                setProduct(products_fetched);
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
         }
         fetchProducts();
     }, []);
@@ -43,11 +42,11 @@ const Product = () => {
                     {/* 2. Product display area */}
                     <div className="flex w-full px-2 md:px-0">
                         {loading ? (
-                            <ProductsCardLoading />
+                            <ProductsCardLoading/>
                         ) : products.length === 0 ? (
-                            <ProductNotFound />
+                            <ProductNotFound/>
                         ) : (
-                            <ProductsCardElement products={products} />
+                            <ProductsCardElement products={products}/>
                         )}
                     </div>
                 </div>

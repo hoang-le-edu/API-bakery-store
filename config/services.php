@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // manually added
+    'ghn' => [
+        'api_token' =>env('GHN_API_TOKEN'),
+    ],
+
 ];

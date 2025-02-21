@@ -1,85 +1,67 @@
 import React from "react";
-import Barcode from "../../assets/footer/barcode.png";
-import PlayStore from "../../assets/footer/play_store.png";
-import GooglePlay from "../../assets/footer/google_play.png";
-import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram } from "react-icons/fa";
-
-const information = [
-  {
-    title: "Support",
-    subtitle: [
-      "Jalan kelapa Raya Rispa 4",
-      "exclusive@gmail.com",
-      "Phone : 021-8791655",
-      "Fax : 021-998866",
-    ],
-  },
-  {
-    title: "Account",
-    subtitle: ["My Account", "Login / Register", "Cart", "Wishlist", "Shop"],
-  },
-  {
-    title: "Quick Link",
-    subtitle: ["Privacy Policy", "Term of Use", "FAQ", "Contact"],
-  },
-];
-
-const socialStyle = "hover:text-tertiary text-xl transition-all duration-300 ";
+import {Link} from "react-router-dom";
+import {FaFacebook, FaInstagram} from "react-icons/fa";
 
 const Footer = () => {
-  return (
-    <footer className="bg-secondary text-white">
-      <div className="container mx-auto py-12 ">
-        <div className="flex flex-wrap">
-          {information.map((info, index) => {
-            return (
-              <div className="w-full md:w-1/2 lg:w-1/4 mb-5  px-4" key={index}>
-                <div className="text-center lg:text-start">
-                  <h1 className="text-xl font-medium mb-4">{info.title}</h1>
-                  <div className="text-sm font-light">
-                    {info.subtitle.map((item, index) => {
-                      return (
-                        <div className="mb-2" key={index}>
-                          {item}
+    return (
+        <footer className="bg-[#2D2D2D] text-white py-10">
+            <div className="container mx-auto px-6 lg:px-20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+                    {/* First Column: Logo and BEPMETAY */}
+                    <div className="flex flex-col items-start">
+                        <img src={"/build/assets/logo.png"} alt="Logo" className="w-36 mb-4"/>
+                        <span className="text-2xl font-bold tracking-wide">BEPMETAY</span>
+                    </div>
+
+                    {/* Second Column: Navigation Links */}
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4">Shopping Now</h2>
+                        <ul className="space-y-3 text-lg">
+                            <li>
+                                <Link to="/" className="hover:text-gray-200 transition-all">Home</Link>
+                            </li>
+                            <li>
+                                <Link to="/menu" className="hover:text-gray-200 transition-all">Menu</Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Third Column: Contact Information */}
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
+                        <ul className="space-y-3 text-lg">
+                            <li>Phone: <a href="tel:0927818888" className="hover:text-gray-200 transition-all">0927818888
+                                (Dì Duyên)</a></li>
+                            <li>Phone: <a href="tel:0566979979" className="hover:text-gray-200 transition-all">0566979979
+                                (Bé Thư)</a></li>
+                            <li>Web: <a href="https://bepmetay.com" target="_blank" rel="noopener noreferrer"
+                                        className="hover:text-gray-200 transition-all">bepmetay.com</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Fourth Column: Social Media Links */}
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4">Follow Us</h2>
+                        <div className="flex space-x-6">
+                            <a href="https://www.facebook.com/duyen.nguyen.344258" target="_blank"
+                               rel="noopener noreferrer" className="hover:text-gray-200 transition-all">
+                                <FaFacebook className="text-3xl"/>
+                            </a>
+                            <a href="https://www.instagram.com/lat_12_12/" target="_blank" rel="noopener noreferrer"
+                               className="hover:text-gray-200 transition-all">
+                                <FaInstagram className="text-3xl"/>
+                            </a>
                         </div>
-                      );
-                    })}
-                  </div>
+                    </div>
                 </div>
-              </div>
-            );
-          })}
-          <div className="w-full md:w-1/2 lg:w-1/4 mb-5 px-4 flex flex-col items-center md:items-start justify-center">
-            <h1 className="text-xl font-medium mb-4">Download App</h1>
-            <div className="mb-2 text-sm font-light">
-              Save 3% with Apps New User Only
-            </div>
-            <div className="flex flex-col gap-y-3 font-light text-md mb-4 ">
-              <div className="flex flex-row justify-between gap-x-2 scale-90 md:scale-100 ">
-                <div className="w-[40%]">
-                  <img className="w-full" src={Barcode} alt="" />
+
+                {/* Footer Bottom */}
+                <div className="mt-5 border-t border-gray-300 pt-5 text-center text-lg font-medium">
+                    © 2025 BEPMETAY. All rights reserved.
                 </div>
-                <div className="w-[60%]">
-                  <div>
-                    <img src={GooglePlay} alt="" />
-                  </div>
-                  <div>
-                    <img src={PlayStore} alt="" />
-                  </div>
-                </div>
-              </div>
             </div>
-            <div className="flex flex-row w-[80%] justify-between gap-x-4 cursor-pointer transition-all ">
-              <FaFacebook className={socialStyle} />
-              <FaTwitter className={socialStyle} />
-              <FaInstagram className={socialStyle} />
-              <FaLinkedin className={socialStyle} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
+        </footer>
+    );
 };
 
 export default Footer;

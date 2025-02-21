@@ -18,7 +18,7 @@ class AdminSeeder extends Seeder
         if (!User::where('id', '1')->exists()) {
             User::create([
                 'id' => '1',
-                'firebase_uid' => 'admin',
+                'firebase_uid' => 'admin@admin.com',
                 'name' => 'Admin',
                 'email' => 'admin@admin.com',
                 'password' => bcrypt('123123'),

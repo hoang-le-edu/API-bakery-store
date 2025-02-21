@@ -15,37 +15,56 @@
 //
 // export default Home;
 
-import React from "react";
+import React, {useEffect, useState} from "react";
 import Banner from "../../components/homepage/Banner";
 import BestProducts from "../../components/homepage/BestProducts";
-import Categories from "../../components/homepage/Categories";
+import About from "../../components/homepage/About.jsx";
 
 const Home = () => {
+    const [animate, setAnimate] = useState(false);
+
+    useEffect(() => {
+        setAnimate(true); // Trigger animation on first render
+    }, []);
     return (
         <section className="bg-gray-100">
             {/* 1. Banner */}
-            <Banner />
+            <Banner/>
 
-            {/* 2. Categories Section */}
-            <div className="container mx-auto px-4 py-10">
-                <Categories />
+            {/* 🔹 Section Separator */}
+            <div className="my-12">
+                <hr className="border-t-2 border-gray-300 w-3/4 mx-auto"/>
             </div>
 
-            {/* 3. Best Products Section */}
-            <div className="container mx-auto px-4 py-10">
-                <BestProducts />
+            {/* 🔹 About Section with Title */}
+            <div className="text-center">
+                <p className={`inline text-3xl font-bold text-white bg-[#f26d78] text-center
+                                px-5 py-2 border-4 border-[#f26d78] rounded-full
+                                transition-transform duration-700 ${animate ? "scale-110" : "scale-100"}`}>
+                    About Us
+                </p>
             </div>
 
-            {/* 4. CTA Section */}
-            <div className="py-10 bg-tertiary text-white text-center">
-                <h2 className="text-3xl font-bold mb-4">Get the best deals now!</h2>
-                <p className="mb-6">Sign up and get exclusive discounts on top products.</p>
-                <button className="bg-white text-tertiary px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-gray-200 transition">
-                    Sign Up Now
-                </button>
+            <About/>
+
+            {/* 🔹 Section Separator */}
+            <div className="my-12">
+                <hr className="border-t-2 border-gray-300 w-3/4 mx-auto"/>
             </div>
+
+            {/* 🔹 Best Products Section with Title */}
+            <div className="text-center">
+                <p className={`inline text-3xl font-bold text-white bg-[#f26d78] text-center
+                                px-5 py-2 border-4 border-[#f26d78] rounded-full
+                                transition-transform duration-700 ${animate ? "scale-110" : "scale-100"}`}>
+                    Best Products
+                </p>
+            </div>
+
+            <BestProducts/>
         </section>
     );
 };
 
 export default Home;
+

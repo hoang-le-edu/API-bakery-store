@@ -12,7 +12,7 @@ import {
     REGISTER_FAIL,
 } from "../constant/userType";
 import Cookies from "js-cookie";
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 import axios from "axios";
 
 export const userLogin = (input) => async (dispatch) => {
@@ -104,8 +104,6 @@ export const userRegister = (input, firebase_uid) => async (dispatch) => {
     try {
         dispatch({type: REGISTER_PROCESS});
 
-        console.log(input, firebase_uid);
-
         const response = await connectApi.post("/api/auth/register", {
             name: input.name,
             email: input.email,
@@ -118,33 +116,12 @@ export const userRegister = (input, firebase_uid) => async (dispatch) => {
             auth_type: input.auth_type,
         });
 
-        console.log(response.data);
-
         dispatch({type: REGISTER_SUCCESS});
     } catch (error) {
         dispatch({type: REGISTER_FAIL, payload: error.message});
     }
 }
 
-// set Cookie and Role when login success
-export const setAccessTokenAndRole = (data) => async (dispatch) => {
-    try {
-        Cookies.set("accessToken", data.user.accessToken, {
-            expires: 15 / (24 * 60), // 15 minutes
-        });
 
-        const response = await axios.post('/api/auth/check-firebase-user', {firebase_uid: data.user.uid});
-
-        if (response.data.user.is_admin === 1) {
-            Cookies.set("role", "admin");
-        } else {
-            Cookies.set("role", "customer");
-        }
-
-        dispatch({type: LOGIN_SUCCESS});
-    } catch (error) {
-        dispatch({type: LOGIN_FAIL, payload: error.message});
-    }
-}
 
 

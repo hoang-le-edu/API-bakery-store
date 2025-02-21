@@ -24,12 +24,14 @@ class GHNController extends Controller
         // Initialize Guzzle client
         $client = new Client();
 
+        $token = config('services.ghn.api_token');
+
         try {
             // Make the API request to GHN
             $response = $client->get($url, [
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'Token' => env('GHN_API_TOKEN'), // Use your GHN API token from .env
+                    'Token' => $token, // Use your GHN API token from .env
                 ],
             ]);
 
@@ -65,12 +67,14 @@ class GHNController extends Controller
         // Initialize Guzzle client
         $client = new Client();
 
+        $token = config('services.ghn.api_token');
+
         try {
             // Make the API request to GHN
             $response = $client->get($url, [
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'Token' => env('GHN_API_TOKEN'), // Use your GHN API token from .env
+                    'Token' => $token, // Use your GHN API token from .env
                 ],
             ]);
 
@@ -105,12 +109,14 @@ class GHNController extends Controller
         // Initialize Guzzle client
         $client = new \GuzzleHttp\Client();
 
+        $token = config('services.ghn.api_token');
+
         try {
             // Make the API request to GHN
             $response = $client->get($url, [
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'Token' => env('GHN_API_TOKEN'), // Use your GHN API token from .env
+                    'Token' => $token, // Use your GHN API token from .env
                 ],
             ]);
 

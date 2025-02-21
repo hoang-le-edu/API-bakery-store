@@ -925,17 +925,23 @@ class OrderController extends Controller
         // Remove all existing toppings
         $orderDetail->toppings()->delete();
 
+
         // Add new toppings if provided
         if (isset($validated['toppings_id'])) {
             foreach ($validated['toppings_id'] as $toppingId) {
                 $topping = Product::findOrFail($toppingId);
+
+                $extra_price = $topping->productsToppingThis()
+                    ->where('product_id', $orderDetail->product_id)
+                    ->first()->pivot->extra_price;
+
                 $orderDetail->toppings()->create([
                     'order_detail_number' => 'ODTP' . time(),
                     'customer_order_id' => $customerOrder->id,
                     'product_id' => $topping->id,
                     'size' => 'S',
                     'quantity' => $validated['quantity'],
-                    'total_price' => $topping->price * $validated['quantity'],
+                    'total_price' => $extra_price * $validated['quantity'],
                     'note' => '',
                     'parent_id' => $orderDetail->id,
                 ]);
@@ -957,11 +963,13 @@ class OrderController extends Controller
                 'quantity' => $orderDetail->quantity,
                 'note' => $orderDetail->note,
                 'total_price' => $orderDetail->total_price,
-                'toppings' => $orderDetail->toppings->map(function ($topping) {
+                'toppings' => $orderDetail->toppings->map(function ($topping) use ($orderDetail) {
                     return [
                         'id' => $topping->id,
                         'name' => $topping->product->name,
-                        'price' => $topping->product->price,
+                        'price' => $topping->product->productsToppingThis()
+                        ->where('product_id', $orderDetail->product_id)
+                        ->first()->pivot->extra_price,
                     ];
                 }),
             ],

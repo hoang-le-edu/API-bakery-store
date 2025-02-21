@@ -23,7 +23,9 @@ const UserAuth = ({children}) => {
 };
 
 const AdminAuth = ({children}) => {
-    const {userLoggedIn} = useAuth();
+    const {userLoggedIn, isPremiumUser} = useAuth();
+    console.log('userLoggedIn', userLoggedIn);
+    console.log('isPremiumUser', isPremiumUser);
     if (userLoggedIn && Cookies.get("role") === "admin") {
         return children;
     } else if (!userLoggedIn) {

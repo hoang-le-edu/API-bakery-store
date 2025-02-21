@@ -15,7 +15,7 @@ import {
     UPDATE_PRODUCT_PROCESS,
 } from "../constant/productType";
 
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 
 // 1. get a single product using id's
 export const getSingleProduct = (id) => async (dispatch) => {
@@ -31,7 +31,6 @@ export const getAllProducts = (limit, form) => async (dispatch) => {
     dispatch({type: GET_PRODUCTS_PROCESS});
 
     const {data} = await connectApi.get(`/api/customer/products/all?limit=${limit}`, {params: form});
-    console.log(data);
 
     dispatch({type: GET_PRODUCTS_SUCCESS, payload: data});
 };
@@ -40,7 +39,6 @@ export const adminGetAllProducts = () => async (dispatch) => {
     dispatch({type: GET_PRODUCTS_PROCESS});
 
     const {data} = await connectApi.get(`/api/admin/products/all`);
-    console.log(data);
 
     dispatch({type: GET_PRODUCTS_SUCCESS, payload: data});
 };
@@ -50,7 +48,6 @@ export const getInputResult = (searchParams) => async (dispatch) => {
     dispatch({type: INPUT_RESULT_PROCESS});
 
     const {data} = await connectApi.get(`/api/customer/products/search?q=${searchParams}`);
-    console.log(data);
 
     // const filteredProducts = data.products.filter((product) =>
     //   product.title.toLowerCase().includes(searchParams.toLowerCase())

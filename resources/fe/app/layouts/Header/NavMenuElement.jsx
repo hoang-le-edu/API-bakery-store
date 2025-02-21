@@ -18,7 +18,6 @@ const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) =>
     const navMenuName = [
         {name: "Home", path: "/", visible: true},
         {name: "Menu", path: "/menu", visible: true},
-        {name: "Contact", path: "/contact", visible: true},
         {name: "Login", visible: !userLoggedIn, onClick: handleLoginClick}, // Show Signin only if user array is empty
         {name: "Order", path: "/orders", visible: userLoggedIn},
     ];

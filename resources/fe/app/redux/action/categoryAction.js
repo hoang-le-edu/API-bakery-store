@@ -4,7 +4,7 @@ import {
   GET_CATEGORIES_FAIL,
 } from "../constant/categoriesType";
 
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 
 export const getCategories = () => async (dispatch) => {
   try {

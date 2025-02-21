@@ -1,4 +1,4 @@
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 import {
     FETCH_DISTRICTS_PROCESS, FETCH_DISTRICTS_SUCCESS,
     FETCH_PROVINCES_PROCESS,
@@ -12,11 +12,14 @@ export const fetchProvinces = () => async (dispatch) => {
 
     const { data } = await connectApi.get("/api/ghn/provinces");
 
+    console.log(data);
+
     dispatch({ type: FETCH_PROVINCES_SUCCESS, payload: data });
 }
 
 export const fetchDistricts = (provinceId) => async (dispatch) => {
     dispatch({ type: FETCH_DISTRICTS_PROCESS });
+
     const { data } = await connectApi.get(`/api/ghn/districts`, { params: { province_id: provinceId } });
 
     dispatch({ type: FETCH_DISTRICTS_SUCCESS, payload: data });
@@ -28,4 +31,12 @@ export const fetchWards = (districtId) => async (dispatch) => {
     const { data } = await connectApi.get(`/api/ghn/wards`, { params: { district_id: districtId } });
 
     dispatch({ type: FETCH_WARDS_SUCCESS, payload: data });
+}
+
+export const createPaymentLink = (order_id) => async (dispatch) => {
+    dispatch({ type: "CREATE_PAYMENT_LINK_PROCESS" });
+
+    const response = await connectApi.post("/api/payos/create-payment-link", {order_id: order_id});
+
+    dispatch({ type: "CREATE_PAYMENT_LINK_SUCCESS", payload: response.data });
 }

@@ -177,19 +177,22 @@ class ProductController extends BaseController
             }
         } else {
             // Order by category priority
-            $query->orderBy('categories.priority', 'asc');  // Assuming ascending priority
+            $query->orderBy('categories.priority', 'desc');
+
+//            if ($limit && $limit !== 'undefined') {
+//                // Order by category priority
+//                $query->orderBy('products.priority', 'desc');  // Assuming ascending priority
+//            }
         }
 
         // Get the number of items to fetch, defaulting to 10
         $pageSize = $request->input('page_size', 10);
 
         // Fetch the products
-        if ($request->input('category_id') == 'all')
+        if ($request->input('category_id') === 'all')
             $products = $query->get();
         else
             $products = $query->limit($limit === 'undefined' || is_null($limit) ? $pageSize : $limit)->get();
-
-        $products_count = $query->count();
 
         $return_data = [];
         $prev_category_id = null;
@@ -213,7 +216,7 @@ class ProductController extends BaseController
         }
 
         // Determine if there are more products to load
-        $hasMore = $products->count() === $pageSize;
+        $hasMore = $products->count() < $query->count();
 
         // Get the last product's ID to use as a cursor for the next request
         $lastProductId = $products->isNotEmpty() ? $products->last()->product_id : null;
@@ -221,7 +224,7 @@ class ProductController extends BaseController
         return response()->json([
             'message' => 'Products retrieved successfully.',
             'data' => $this->toArray($return_data),
-            'products_count' => $products_count,
+            'products_count' => $products->count(),
             'pagination' => [
                 'last_product_id' => $lastProductId,  // Provide the ID of the last fetched product for cursor-based pagination
                 'has_more' => $hasMore,               // Indicate if there are more products to load

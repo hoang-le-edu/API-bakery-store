@@ -7,6 +7,7 @@ import {useAuth} from "../../hooks/contexts/authContext/index.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {notify} from "../../layouts/notification/notify.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
+import {FaArrowLeft, FaArrowRight} from "react-icons/fa";
 
 const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
     const dispatch = useDispatch();
@@ -49,8 +50,7 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
     const [images, setImages] = useState([]);
 
     const {userLoggedIn} = useAuth();
-    const {currentPopup, openPopup, closePopup, switchPopup} = usePopup();
-
+    const {openPopup, closePopup, switchPopup} = usePopup();
 
     // reset state after add product to cart
     const resetState = async () => {
@@ -202,8 +202,9 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
         if(isEdit) {
             openPopup({popupName: 'cartDrawer'});
         }
-        else
+        else {
             closePopup();
+        }
     }
 
     // auto calculate total price
@@ -251,7 +252,7 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
     if (!isVisible) return null;
 
     return (
-        <div className="overlay fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+        <div className="overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-lg shadow-lg w-[1300px] h-[600px] relative flex z-9999"
                  onClick={(e) => e.stopPropagation()}>
                 {/* Left Section */}
@@ -267,7 +268,7 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
                             }
                         }}
                         className="absolute left-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
-                        &lt;
+                        <FaArrowLeft/>
                     </button>
 
                     {/* Image */}
@@ -288,7 +289,7 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
                             }
                         }}
                         className="absolute right-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
-                        &gt;
+                        <FaArrowRight/>
                     </button>
                 </div>
 

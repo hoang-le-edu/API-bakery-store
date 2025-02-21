@@ -5,20 +5,13 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GHNController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\PayOSWebhookController;
-use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRolePermissionController;
 use App\Http\Controllers\VoucherController;
-use App\Http\Middleware\FirebaseAuthMiddleware;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\ValidationException;
-use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
-use App\Http\Controllers\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,7 +36,7 @@ Route::middleware(['firebase.auth'])->get('/test-firebase', function (\Illuminat
 });
 
 
-Route::middleware(['firebase.auth'])->group(function(){
+Route::middleware(['firebase.auth'])->group(function () {
     //Auth
     Route::get('/auth/me', [AuthenticationController::class, 'me']);
     Route::post('/auth/logout', [AuthenticationController::class, 'logout']);
@@ -131,7 +124,7 @@ Route::middleware(['firebase.auth'])->group(function(){
         Route::post('/products/add', [\App\Http\Controllers\ProductController::class, 'store']);
         Route::get('/products/{id}', [\App\Http\Controllers\ProductController::class, 'adminGetProductDetail']);
         Route::post('/products/update/{id}', [\App\Http\Controllers\ProductController::class, 'update']);
-
+        Route::get('/admin/getAdmin', [\App\Http\Controllers\AuthenticationController::class, 'getAdmin']);
     });
 
 
@@ -143,7 +136,6 @@ Route::get('/customer/products/search', [ProductController::class, 'searchProduc
 Route::get('/customer/products/{category}', [ProductController::class, 'getProducts']);
 Route::get('/categories/options/all', [\App\Http\Controllers\CategoryController::class, 'getCategoryJson']);
 
-
 Route::post('/auth/login', [AuthenticationController::class, 'login']);
 Route::post('/auth/refresh', [AuthenticationController::class, 'refresh']);
 Route::post('/auth/auth-otp', [AuthenticationController::class, 'loginWithOtp']);
@@ -151,4 +143,8 @@ Route::post('/auth/register', [AuthenticationController::class, 'register']);
 Route::post('/auth/gen-otp', [AuthenticationController::class, 'generate']);
 Route::post('/webhook/payos', [PayOSWebhookController::class, 'handlePayOSWebhook']);
 Route::post('/auth/check-firebase-user', [AuthenticationController::class, 'checkFirebaseUser']);
+Route::post('/auth/setCustomTokenForAdmin', [AuthenticationController::class, 'setCustomTokenForAdmin']);
+Route::get('/auth/getCustomTokenForAdmin', [AuthenticationController::class, 'getCustomTokenForAdmin']);
+Route::post('/auth/addAdmin', [AuthenticationController::class, 'addAdmin']);
+
 

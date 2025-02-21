@@ -43,7 +43,7 @@ class AuthenticationController extends BaseController
         ]);
 
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return $this->sendError($validator->errors(), $validator->errors());
         }
 
@@ -56,7 +56,7 @@ class AuthenticationController extends BaseController
 
 
 //        if ($input['password'])
-            $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt($input['password']);
 
         // update
         $input['user_type'] = 'customer';
@@ -65,10 +65,10 @@ class AuthenticationController extends BaseController
             $check_unique_phone = User::where('phone_number', $input['phone_number'])->first();
             $check_unique_email = User::where('email', $input['email'])->first();
 
-            if($check_unique_phone) {
+            if ($check_unique_phone) {
                 return $this->sendError('Phone number already exists.', ['error' => 'Phone number already exists.']);
             }
-            if($check_unique_email) {
+            if ($check_unique_email) {
                 return $this->sendError('Email already exists.', ['error' => 'Email already exists.']);
             }
 
@@ -98,14 +98,15 @@ class AuthenticationController extends BaseController
 
         return $this->sendResponse($success, 'User registered successfully.');
     }
-     // Generate OTP
+
+    // Generate OTP
     public function generate(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'mobile_no' => 'required|exists:users,phone_number',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return $this->sendError('Validation Error.', $validator->errors());
         }
         # Generate An OTP
@@ -113,6 +114,7 @@ class AuthenticationController extends BaseController
         $verificationCode['send_status'] = $this->sendOtp($request->mobile_no, $verificationCode->otp);
         return $this->sendResponse($verificationCode, 'OTP generated successfully.');
     }
+
     public function sendOtp($number, $otp)
     {
         if (substr($number, 0, 1) === '0') {
@@ -123,11 +125,11 @@ class AuthenticationController extends BaseController
                 [
                     'destinations' => [
                         [
-                            'to' => '84'.$number
+                            'to' => '84' . $number
                         ]
                     ],
                     'from' => '447491163443', // Your sender's number
-                    'text' => 'Your OTP to login into PinyCloud is '. $otp .' it will expire in 1 minutes.'
+                    'text' => 'Your OTP to login into PinyCloud is ' . $otp . ' it will expire in 1 minutes.'
                 ]
             ]
         ];
@@ -135,7 +137,7 @@ class AuthenticationController extends BaseController
         // Make the HTTP request using Laravel's HTTP client
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'App '. getenv('API_SPEED_SMS_KEY'),
+                'Authorization' => 'App ' . getenv('API_SPEED_SMS_KEY'),
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])
@@ -163,6 +165,7 @@ class AuthenticationController extends BaseController
             ], 500);
         }
     }
+
     public function generateOtp($mobile_no)
     {
         $user = User::where('phone_number', $mobile_no)->first();
@@ -172,7 +175,7 @@ class AuthenticationController extends BaseController
 
         $now = Carbon::now();
 
-        if($verificationCode && $now->isBefore($verificationCode->expire_at)){
+        if ($verificationCode && $now->isBefore($verificationCode->expire_at)) {
             return $verificationCode;
         }
 
@@ -183,6 +186,7 @@ class AuthenticationController extends BaseController
             'expire_at' => Carbon::now()->addMinutes(10)
         ]);
     }
+
     public function loginWithOtp(Request $request)
     {
         // Validation
@@ -191,7 +195,7 @@ class AuthenticationController extends BaseController
             'otp' => 'required'
         ]);
 
-        if($request->otp == '000000') {
+        if ($request->otp == '000000') {
             $user = User::find($request->user_id);
             return $this->sendResponse($this->authSuccess($user), 'User login successfully.');
         }
@@ -236,27 +240,28 @@ class AuthenticationController extends BaseController
 //        }
 //    }
 
-        public function login(Request $request): JsonResponse
-        {
-            if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-                $user = Auth::user();
-                $accessToken = $user->createToken('accessToken')->plainTextToken;
-                $refreshToken = $user->createToken('refreshToken')->plainTextToken;
+    public function login(Request $request): JsonResponse
+    {
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            $user = Auth::user();
+            $accessToken = $user->createToken('accessToken')->plainTextToken;
+            $refreshToken = $user->createToken('refreshToken')->plainTextToken;
 
-                return $this->sendResponse([
-                    'accessToken' => $accessToken,
-                    'refreshToken' => $refreshToken,
-                    'user' => $user
-                ], 'User login successfully.');
-            } else {
-                return $this->sendError('Unauthorised.', ['error' => 'Unauthorised'], 401);
-            }
+            return $this->sendResponse([
+                'accessToken' => $accessToken,
+                'refreshToken' => $refreshToken,
+                'user' => $user
+            ], 'User login successfully.');
+        } else {
+            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised'], 401);
         }
+    }
 
-    public function authSuccess($user) : array {
-        $success['token'] =  $user->createToken('MyApp')->plainTextToken;
-        $success['user'] =  $user->load('roles');
-        if($user->user_type == 'user' && $user->is_admin == 0) {
+    public function authSuccess($user): array
+    {
+        $success['token'] = $user->createToken('MyApp')->plainTextToken;
+        $success['user'] = $user->load('roles');
+        if ($user->user_type == 'user' && $user->is_admin == 0) {
             $user->load('roles');
             $employee = Employee::where('user_id', $user->id)->first();
             $success['user']['role_name'] = $user->roles->first()->name;
@@ -292,7 +297,7 @@ class AuthenticationController extends BaseController
 
             $customer_info = [];
             $report_data = [];
-            if($user->user_type == 'customer') {
+            if ($user->user_type == 'customer') {
                 $customer_info = Customer::where('user_id', $user->id)->first();
 
                 //Count the number of carts
@@ -334,12 +339,12 @@ class AuthenticationController extends BaseController
         $system_modules = app('modules');
         if (!$user->is_admin) {
             $visibleModules = ['calendar', 'dashboard'];
-            foreach($permissions as $module => $permission) {
+            foreach ($permissions as $module => $permission) {
                 if ($permission['access'] === 'none') {
                     $excludeModule[] = $module;
                 }
             }
-            foreach(array_diff($system_modules, $excludeModule) as $module) {
+            foreach (array_diff($system_modules, $excludeModule) as $module) {
                 $visibleModules[] = $module;
             }
             return $visibleModules;
@@ -355,7 +360,6 @@ class AuthenticationController extends BaseController
         ]);
 
         $oldRefreshToken = $request->refreshToken;
-
 
 
         // Kiểm tra refresh token có tồn tại hay không
@@ -397,13 +401,13 @@ class AuthenticationController extends BaseController
             'firebase_uid' => 'required'
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return $this->sendError('Validation Error.', $validator->errors());
         }
 
         $user = User::where('firebase_uid', $request->firebase_uid)->first();
 
-        if($user) {
+        if ($user) {
             return response()->json([
                 'success' => true,
                 'existed' => true,
@@ -417,14 +421,61 @@ class AuthenticationController extends BaseController
 
     }
 
-    public function testFirebaseConnection(Request $request)
+    public function getAdmin(): JsonResponse
     {
-        $firebaseUser = $request->attributes->get('firebaseUser');
+        $users = User::where('is_admin', 1)->get();
+        return $this->sendResponse($users, 'Admin retrieved successfully.');
+    }
 
-        if ($firebaseUser) {
-            return response()->json(['message' => 'Firebase connection successful', 'user' => $firebaseUser], 200);
-        } else {
-            return response()->json(['message' => 'Firebase connection failed'], 500);
+    public function setCustomTokenForAdmin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'firebase_uid' => 'required',
+            'custom_token' => 'required'
+        ]);
+
+        $user = User::where('firebase_uid', $request->firebase_uid)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized or User not found.'], 401);
         }
+
+        if ($user->is_admin === 0) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $user->custom_token = $request->custom_token;
+        $user->save();
+
+        return $this->sendResponse($user, 'Custom token set successfully.');
+    }
+
+    public function addAdmin(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+            'phone_number' => 'required',
+            'c_password' => 'required|same:password',
+            'firebase_uid' => 'required',
+            'custom_token' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors());
+        }
+
+        $input = $request->all();
+        $input['password'] = bcrypt($input['password']);
+        $input['is_admin'] = 1;
+
+//        return $this->sendResponse($input, 'Admin created successfully.');
+
+        $user = User::create($input);
+
+        $success['token'] = $user->createToken('MyApp')->plainTextToken;
+        $success['name'] = $user->name;
+
+        return $this->sendResponse($success, 'Admin created successfully.');
     }
 }

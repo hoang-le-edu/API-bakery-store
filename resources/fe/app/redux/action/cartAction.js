@@ -8,7 +8,7 @@ import {
     RESET_STATUS, FETCH_CART_PROCESS, FETCH_CART_SUCCESS, UPDATE_CART_PROCESS, UPDATE_CART_SUCCESS,
 } from "../constant/cartType";
 
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 import {getAuth} from "firebase/auth";
 
 // 1. add product to cart by id
@@ -68,7 +68,6 @@ export const fetchCart = () => async (dispatch) => {
                     Authorization: `Bearer ${authToken}`
                 }
             });
-            console.log(data);
 
             dispatch({ type: FETCH_CART_SUCCESS, payload: data });
         } catch (error) {
@@ -84,7 +83,6 @@ export const fetchCart = () => async (dispatch) => {
 // 7. add product to cart
 export const addProductToCart = (product, order_ids) => async (dispatch) => {
     dispatch({ type: ADD_CART_PROCESS });
-    console.log(product, order_ids);
     try {
         const { data } = await connectApi.post(`/api/cart/addProductToCart`, { product, order_ids });
         dispatch({ type: ADD_CART_SUCCESS, payload: data });
@@ -117,7 +115,6 @@ export const deleteProductInCart = (cart_id, order_detail_id) => async (dispatch
 
 // 10. delete topping from cart
 export const deleteToppingInCart = (cart_id, order_detail_id, topping_id) => async (dispatch) => {
-    console.log(cart_id, order_detail_id, topping_id);
     dispatch({ type: REMOVE_CART_PROCESS });
     try {
         await connectApi.post(`/api/cart/removeToppingFromCart`, { cart_id, order_detail_id, topping_id });
@@ -129,7 +126,6 @@ export const deleteToppingInCart = (cart_id, order_detail_id, topping_id) => asy
 
 // 11. reset cart
 export const resetCart = () => async (dispatch) => {
-    console.log("reseted cart");
     dispatch({ type: RESET_STATUS });
 };
 

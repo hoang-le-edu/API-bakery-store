@@ -32,6 +32,7 @@ class PayOSWebhookController extends Controller
                 "data" => $body["data"]
             ]);
         }
+
         $order->payment_status = 'paid';
         $order->order_status = 'In Progress';
         $order->save();

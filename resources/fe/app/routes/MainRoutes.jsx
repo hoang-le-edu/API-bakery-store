@@ -18,6 +18,7 @@ const VerifyPage = React.lazy(() => import("../pages/VerifyOTP/index.jsx"));
 const ContactPage = React.lazy(() => import("../pages/Contact/index.jsx"));
 const MenuPage = React.lazy(() => import("../pages/Menu/index.jsx"));
 const OrderPage = React.lazy(() => import("../pages/Order/index.jsx"));
+const LoginPage = React.lazy(() => import("../pages/Admin/Authentication/Login.jsx"));
 
 function MainContent() {
     const location = useLocation();
@@ -35,8 +36,6 @@ function MainContent() {
 
                     <Route path="/about" element={<AboutPage />} />
 
-                    <Route path="/contact" element={<ContactPage />} />
-
                     <Route path="/verify-otp" element={<VerifyPage />}/>
 
                     <Route path="/menu" element={<MenuPage />}/>
@@ -52,6 +51,8 @@ function MainContent() {
                     />
 
                     {/*admin*/}
+                    <Route path="/admin-login" element={<LoginPage />}/>
+
                     <Route
                         path="/admin/categories"
                         element={

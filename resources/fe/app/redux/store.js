@@ -12,7 +12,7 @@ import {cartReducer} from "./reducer/cartReducer";
 import {checkoutReducer} from "./reducer/checkoutReducer";
 import {userReducer} from "./reducer/userReducer";
 import {orderReducer} from "./reducer/orderReducer.js";
-import {districtReducer, provinceReducer, wardReducer} from "./reducer/paymentReducer.js";
+import {districtReducer, paymentReducer, provinceReducer, wardReducer} from "./reducer/paymentReducer.js";
 
 const reducer = combineReducers({
     products: productsReducer,
@@ -28,6 +28,7 @@ const reducer = combineReducers({
     provinces: provinceReducer,
     districts: districtReducer,
     wards: wardReducer,
+    payment: paymentReducer,
 });
 
 export const store = configureStore({

@@ -76,6 +76,7 @@ export const productsReducer = (state = products, action) => {
                 products: products,
                 total: total,
                 loading: false,
+                hasMore: hasMore,
             };
         }
 
@@ -91,7 +92,6 @@ export const inputResultsReducer = (state = inputResults, action) => {
             return {...state, loading: true, success: false, fail: false};
 
         case INPUT_RESULT_SUCCESS:
-            console.log("input result reducer", action.payload.data);
             return {
                 ...state,
                 inputResults: action.payload.data,

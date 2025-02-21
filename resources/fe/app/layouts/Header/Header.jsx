@@ -16,7 +16,9 @@ import AddPhoneNumberPopup from "../../components/popup/AddPhoneNumberPopup.jsx"
 import RegisterPopup from "../../components/popup/RegisterPopup.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import CartSelectionPopup from "../../components/popup/CartSelectionPopup.jsx";
-import PaymentDetailPopup from "../../components/popup/PaymentDetailPopup.jsx";
+import QRPaymentPopup from "../../components/popup/QRPaymentPopup.jsx";
+import {FaRegUserCircle} from "react-icons/fa";
+
 
 const Header = () => {
     const accessToken = Cookies.get("accessToken");
@@ -40,41 +42,6 @@ const Header = () => {
     const handleNavMenu = () => {
         setOpenMenu(!openMenu);
     };
-
-    const handleLogout = async () => {
-        // dispatch(userLogout());
-        await doSignOut();
-        setState((prevState) => ({
-            ...prevState,
-            profileOpen: false,
-        }));
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        Cookies.remove("role");
-        navigate("/");
-    };
-
-    const toggleState = (key) => {
-        setState((prevState) => ({
-            ...prevState,
-            [key]: !prevState[key],
-        }));
-    }
-
-
-    // useEffect(() => {
-    //     if (!accessToken && !refreshToken) {
-    //         Cookies.remove("accessToken");
-    //         Cookies.remove("refreshToken");
-    //     }
-    // }, []);
-
-
-    // useEffect(() => {
-    //     if (refreshToken && !accessToken) {
-    //         dispatch(getRefreshToken());
-    //     }
-    // }, [refreshToken, accessToken, location.pathname]);
 
     useEffect(() => {
         if (accessToken) {
@@ -184,21 +151,21 @@ const Header = () => {
                                 />
                             )}
 
+                            {/* QR payment popup */}
+                            {currentPopup?.popupName === 'qrPayment' && currentPopup?.paymentLink &&
+                                <QRPaymentPopup isVisible={currentPopup?.popupName === 'qrPayment'} paymentLink={currentPopup?.paymentLink} cart={currentPopup?.order} />}
+
+                            {/* Select Profile button popup */}
+                            {currentPopup?.popupName === 'logout' && (
+                                <UserProfileElement isVisible={currentPopup?.popupName === 'logout'}/>
+                            )}
+
                             {/* Profile button */}
                             {userLoggedIn && (
                                 <div className="relative flex items-center">
-                                    {/*<button*/}
-                                    {/*    onClick={() => toggleState("profile")}*/}
-                                    {/*    className="px-2 text-lg"*/}
-                                    {/*>*/}
-                                    {/*    <FaRegUserCircle/>*/}
-                                    {/*</button>*/}
-                                    {(
-                                        <UserProfileElement
-                                            setState={setState}
-                                            handleLogout={handleLogout}
-                                        />
-                                    )}
+                                    <button onClick={() => openPopup({popupName : 'logout'})} className="px-2 text-lg">
+                                        <FaRegUserCircle/>
+                                    </button>
                                 </div>
                             )}
 

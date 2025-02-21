@@ -1,4 +1,4 @@
-import connectApi from "../../../settings/ConnectApi.jsx";
+import connectApi from "../../../settings/ConnectApi.js";
 import {GET_ORDERS_PROCESS, GET_ORDERS_SUCCESS} from "../constant/orderType.js";
 
 export const getAllOrders = (limit, form) => async (dispatch) => {

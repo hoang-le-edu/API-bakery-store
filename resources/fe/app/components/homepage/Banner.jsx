@@ -1,27 +1,12 @@
 import React, {useEffect, useRef, useState} from "react";
+import {FaArrowLeft, FaArrowRight} from "react-icons/fa";
 
 
 const Banner = () => {
-    // Dynamically import all images from the banner directory
-    // const importAll = (r) => r.keys().map(r);
-    // const images = importAll(require.context('@/assets/banner', false, /\.(png|jpe?g|svg)$/));
-    const images = import.meta.glob('/resources/fe/app/assets/banner/*.{png,jpg,jpeg,svg}', { eager: true });
-
-    console.log(images);
-
+    const images = import.meta.glob('/resources/fe/app/assets/banner/*.{png,jpg,jpeg,svg}', {eager: true});
     const currentImageIndexRef = useRef(0); // Dùng useRef thay vì useState
     const imageRef = useRef(null); // Tham chiếu đến thẻ <img>
     const [imageList, setImageList] = useState(Object.values(images).map(img => img.default));
-
-    // get images from selectedProduct
-    // useEffect(() => {
-    //     if (selectedProduct) {
-    //         setImages([
-    //             selectedProduct.image_url,
-    //             ...(selectedProduct.productDetailImages || []).map(img => img.image_url)
-    //         ]);
-    //     }
-    // }, [selectedProduct]);
 
     // auto change imageList
     useEffect(() => {
@@ -37,9 +22,21 @@ const Banner = () => {
         }
     }, [imageList]);
 
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    useEffect(() => {
+        scrollToTop();
+    }, []);
+
     // style={{ backgroundImage: "url('/build/assets/Banner.svg')" }}
     return (
-        <section className="relative h-[480px] w-[1200px] flex items-center justify-center bg-cover bg-center mx-auto mt-8 rounded-2xl">
+        <section
+            className="relative h-[480px] w-[1200px] flex items-center justify-center bg-cover bg-center mx-auto mt-8 rounded-2xl">
             {/* Left Arrow Button */}
             <button
                 onClick={() => {
@@ -49,7 +46,7 @@ const Banner = () => {
                     }
                 }}
                 className="absolute left-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
-                &lt;
+                <FaArrowLeft/>
             </button>
 
             {/* Image */}
@@ -69,7 +66,7 @@ const Banner = () => {
                     }
                 }}
                 className="absolute right-8 inset-y-1/2 transform -translate-y-1/2 bg-white text-black w-12 h-12 flex items-center justify-center rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity duration-300">
-                &gt;
+                <FaArrowRight/>
             </button>
         </section>
     );

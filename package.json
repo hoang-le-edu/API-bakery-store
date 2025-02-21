@@ -50,6 +50,8 @@
         "@vueform/multiselect": "^2.6.11",
         "date-fns": "^4.1.0",
         "firebase": "^11.3.1",
+        "firebase-admin": "^13.1.0",
+        "firebase-functions": "^6.3.2",
         "flowbite": "^2.5.2",
         "flowbite-react": "^0.10.2",
         "flowbite-vue": "^0.1.6",

@@ -33,6 +33,10 @@ return new class extends Migration
             $table->uuid('created_by');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
 //            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
+
+            // update
+            $table->text('custom_token')->unique()->nullable()->default(null); // use for authenticate admin
+
         });
     }
 
