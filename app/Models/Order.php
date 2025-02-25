@@ -6,10 +6,11 @@ use App\Models\Concerns\HasCreatedBy;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory, HasUuid, HasCreatedBy;
+    use HasFactory, HasUuid, HasCreatedBy, SoftDeletes;
 
     protected $fillable = [
         'id',
@@ -34,7 +35,8 @@ class Order extends Model
         'ward',
         'street',
         'shipping_fee',
-        'payment_link'
+        'payment_link',
+        'note'
     ];
 
     // Relationship with the host customer

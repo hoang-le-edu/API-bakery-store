@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use AWS\CRT\Log;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -20,9 +21,9 @@ class PayOSController extends Controller
     public function __construct()
     {
         $this->payos = new PayOS(
-            getenv('PAYOS_CLIENT_ID'),
-            getenv('PAYOS_API_KEY'),
-            getenv('PAYOS_CHECKSUM_KEY')
+            config('services.payos.client_id'),
+            config('services.payos.api_key'),
+            config('services.payos.checksum_key')
         );
     }
     public function createPayment(Request $request)
@@ -62,8 +63,8 @@ class PayOSController extends Controller
                 'orderCode' => $orderCode, // Unique order code
                 'amount' => intval($order->order_total), // Payment amount
                 'description' => '#' . $order->order_number, // Payment description
-                'returnUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL after payment
-                'cancelUrl' => 'https://cd39-203-205-32-65.ngrok-free.app', // Redirect URL if payment is canceled
+                'returnUrl' => 'https://992a-2402-800-63ac-8a09-d9dc-fa16-b63-b3d0.ngrok-free.app', // Redirect URL after payment
+                'cancelUrl' => 'https://992a-2402-800-63ac-8a09-d9dc-fa16-b63-b3d0.ngrok-free.app', // Redirect URL if payment is canceled
             ];
 
             try {
@@ -76,12 +77,14 @@ class PayOSController extends Controller
                     "checkoutUrl" => $response["checkoutUrl"]
                 ]);
             } catch (\Throwable $th) {
+                \Illuminate\Support\Facades\Log::debug($th->getMessage());
                 return response()->json([
                     "error" => 1,
                     "message" => $th->getMessage(),
                 ]);
             }
         } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::debug('PayOS Webhook test received');
             return response()->json([
                 "error" => 1,
                 "message" => $th->getMessage(),
@@ -112,8 +115,8 @@ class PayOSController extends Controller
                 'orderCode' => $orderCode, // Unique order code
                 'amount' => intval($order->order_total), // Payment amount
                 'description' => '#' . $order->order_number, // Payment description
-                'returnUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL after payment
-                'cancelUrl' => 'https://cd39-203-205-32-65.ngrok-free.app ', // Redirect URL if payment is canceled
+                'returnUrl' => 'https://992a-2402-800-63ac-8a09-d9dc-fa16-b63-b3d0.ngrok-free.app', // Redirect URL after payment
+                'cancelUrl' => 'https://992a-2402-800-63ac-8a09-d9dc-fa16-b63-b3d0.ngrok-free.app', // Redirect URL if payment is canceled
             ];
 
             try {

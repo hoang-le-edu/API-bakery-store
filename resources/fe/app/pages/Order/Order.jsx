@@ -4,27 +4,23 @@ import {getAllOrders} from "../../redux/action/orderAction.js";
 import {useDispatch, useSelector} from "react-redux";
 import debounce from "lodash/debounce";
 import SpinnerLoading from "../../components/loading/SpinnerLoading.jsx";
+import {useTranslation} from "react-i18next";
 
 
 const Order = () => {
-    const [searchTextInput, setSearchTextInput] = useState('');
-    const [currentPopup, setCurrentPopup] = useState('');
-    const [isOpen, setIsOpen] = useState(false);
+    const {t} = useTranslation();
     const [loading, setLoading] = useState(false);
-    const [listOrder, setListOrder] = useState([]);
     const dispatchOrder = useDispatch();
     const newOrders = useSelector((state) => state.orders.orders);
     const [activeTab, setActiveTab] = useState('Wait For Approval');
     const tabs = [
-        {id: 'wait-confirmation', label: 'Wait For Approval'},
-        {id: 'in-progress', label: 'In Progress'},
-        {id: 'delivering', label: 'Delivering'},
-        {id: 'delivered', label: 'Delivered'},
-        {id: 'completed', label: 'Completed'},
-        {id: 'cancelled', label: 'Cancelled'},
+        {id: 'Wait For Approval', label: t('ORDERS.WAIT_FOR_APPROVAL')},
+        {id: 'In Progress', label: t('ORDERS.IN_PROGRESS')},
+        {id: 'Delivering', label: t('ORDERS.DELIVERING')},
+        {id: 'Delivered', label: t('ORDERS.DELIVERED')},
+        {id: 'Completed', label: t('ORDERS.COMPLETED')},
+        {id: 'Cancelled', label: t('ORDERS.CANCELLED')},
     ];
-    const [activeTabObject, setActiveTabObject] = useState('');
-
 
     useEffect(() => {
         fetchOrders();
@@ -57,7 +53,7 @@ const Order = () => {
 
     const onTabChange = (tab1) => {
         let activeTabNew = tabs.find((tab) => tab.id === tab1);
-        setActiveTab(activeTabNew.label);
+        setActiveTab(activeTabNew.id);
     };
 
     const changeSearchText = (e) => {
@@ -75,13 +71,13 @@ const Order = () => {
             <div className="flex p-6 gap-4 w-full h-full justify-center">
                 {/* Order Tabs*/}
                 <div>
-                    <span className="text-gray-500 text-3xl font-bold whitespace-nowrap">Order history</span>
-                    <div className="flex flex-col mb-4 border-b border-gray-200 dark:border-gray-700 mt-6">
+                    <span className="text-gray-500 text-3xl font-bold whitespace-nowrap">{t('ORDERS.ORDER_HISTORY')}</span>
+                    <div className="flex flex-col mb-4 border-gray-200 dark:border-gray-700 mt-6">
                         <ul className="flex flex-wrap flex-col gap-3 -mb-px text-sm font-semibold text-center">
                             {tabs.map((tab) => (
                                 <li key={tab.id} className="me-2 flex justify-end">
                                     <button
-                                        className={`shadow-lg inline-flex items-center px-4 py-3 rounded-lg w-[180px] ${activeTab === tab.id ? 'active' : ''}`}
+                                        className={`hover:bg-stone-300 shadow-lg inline-flex items-center px-4 py-3 rounded-lg w-[180px] ${activeTab === tab.id ? 'bg-blue-500 text-white' : 'hover:bg-stone-300'}`}
                                         id={`${tab.id}-tab`}
                                         type="button"
                                         aria-controls={`${tab.id}-content`}

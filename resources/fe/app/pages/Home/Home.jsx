@@ -16,9 +16,11 @@
 // export default Home;
 
 import React, {useEffect, useState} from "react";
-import Banner from "../../components/homepage/Banner";
-import BestProducts from "../../components/homepage/BestProducts";
-import About from "../../components/homepage/About.jsx";
+import Banner from "../../components/Home/Banner";
+import BestProducts from "../../components/Home/BestProducts";
+import About from "../../components/Home/About.jsx";
+import { useTranslation } from 'react-i18next';
+
 
 const Home = () => {
     const [animate, setAnimate] = useState(false);
@@ -26,6 +28,9 @@ const Home = () => {
     useEffect(() => {
         setAnimate(true); // Trigger animation on first render
     }, []);
+
+    const {t} = useTranslation('translation');
+
     return (
         <section className="bg-gray-100">
             {/* 1. Banner */}
@@ -41,7 +46,7 @@ const Home = () => {
                 <p className={`inline text-3xl font-bold text-white bg-[#f26d78] text-center
                                 px-5 py-2 border-4 border-[#f26d78] rounded-full
                                 transition-transform duration-700 ${animate ? "scale-110" : "scale-100"}`}>
-                    About Us
+                    {t('HOME.ABOUT')}
                 </p>
             </div>
 
@@ -57,7 +62,7 @@ const Home = () => {
                 <p className={`inline text-3xl font-bold text-white bg-[#f26d78] text-center
                                 px-5 py-2 border-4 border-[#f26d78] rounded-full
                                 transition-transform duration-700 ${animate ? "scale-110" : "scale-100"}`}>
-                    Best Products
+                    {t('HOME.BEST_PRODUCTS')}
                 </p>
             </div>
 

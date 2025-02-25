@@ -24,8 +24,8 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['customer', 'createdBy', 'manuallyCreatedBy', 'team'])->get();
-        return response()->json($orders);
+        $orders = Order::with(['customers', 'creator'])->get();
+        return response()->json(['message' => 'Orders fetched successfully.', 'data' => $orders]);
     }
     public function deleteCart($orderId)
     {
@@ -1205,10 +1205,14 @@ class OrderController extends Controller
      */
     public function destroy(string $id)
     {
-        $order = Order::findOrFail($id);
-        $order->delete();
+        try {
+            $order = Order::findOrFail($id);
+            $order->delete();
 
-        return response()->json(['message' => 'Order deleted successfully . ']);
+            return response()->json(['message' => 'Order deleted successfully . ']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Order not found . '], 404);
+        }
     }
 
     /**
@@ -1239,7 +1243,7 @@ class OrderController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function createOrder(Request $request)
+    public function adminCreateOrder(Request $request)
     {
         // Validate the request data
         $validated = $request->validate([
@@ -1265,7 +1269,7 @@ class OrderController extends Controller
             'source' => 'Offline',
             'order_total' => 0,
             'host_id' => $customer->id,
-            'team_id' => $currentUser->team_id,
+//            'team_id' => $currentUser->team_id,
             'created_by' => $currentUser->id,
             'customer_feedback' => '',
         ]);
