@@ -17,7 +17,6 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::withTrashed()->get(); // Include soft-deleted records
-        return response()->json($categories);
     }
 
     public function getCategories()
@@ -126,5 +125,15 @@ class CategoryController extends Controller
         $category->forceDelete();
 
         return response()->json(['message' => 'Category permanently deleted.']);
+    }
+
+    public function adminGetCategories(): JsonResponse
+    {
+        $categories = Category::all();
+
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ], 200);
     }
 }

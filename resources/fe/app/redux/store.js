@@ -11,7 +11,7 @@ import {categoriesReducer} from "./reducer/categoryReducer";
 import {cartReducer} from "./reducer/cartReducer";
 import {checkoutReducer} from "./reducer/checkoutReducer";
 import {userReducer} from "./reducer/userReducer";
-import {orderReducer} from "./reducer/orderReducer.js";
+import {orderReducer, updateOrderReducer} from "./reducer/orderReducer.js";
 import {districtReducer, paymentReducer, provinceReducer, wardReducer} from "./reducer/paymentReducer.js";
 
 const reducer = combineReducers({
@@ -25,6 +25,7 @@ const reducer = combineReducers({
     checkout: checkoutReducer,
     user: userReducer,
     orders: orderReducer,
+    updateOrder: updateOrderReducer,
     provinces: provinceReducer,
     districts: districtReducer,
     wards: wardReducer,

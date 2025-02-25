@@ -56,27 +56,13 @@ export const resetStatus = () => async (dispatch) => {
 
 export const fetchCart = () => async (dispatch) => {
     dispatch({ type: FETCH_CART_PROCESS });
+    try {
+        const { data } = await connectApi.get("/api/cart/fetchCart");
 
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (user) {
-        const authToken = await user.getIdToken(true); // Retrieve Firebase Token
-        try {
-            const { data } = await connectApi.get("/api/cart/fetchCart", {
-                headers: {
-                    Authorization: `Bearer ${authToken}`
-                }
-            });
-
-            dispatch({ type: FETCH_CART_SUCCESS, payload: data });
-        } catch (error) {
-            console.error("Error fetching cart:", error);
-            // Handle error appropriately
-        }
-    } else {
-        console.error("User is not authenticated");
-        // Handle unauthenticated user appropriately
+        dispatch({ type: FETCH_CART_SUCCESS, payload: data });
+    } catch (error) {
+        console.error("Error fetching cart:", error);
+        // Handle error appropriately
     }
 };
 

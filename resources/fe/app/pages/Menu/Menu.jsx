@@ -7,13 +7,13 @@ import {getCategories} from "../../redux/action/categoryAction.js";
 import {getAllProducts} from "../../redux/action/productAction.js";
 import ButtonElement from "../../components/element/ButtonElement.jsx";
 import debounce from "lodash/debounce";
-import {notify} from "../../layouts/notification/notify.jsx";
+import {notify} from "../../layouts/Notification/notify.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
-import Banner from "../../components/homepage/Banner.jsx";
 import Marketing from "./models/Marketing.jsx";
+import {useTranslation} from "react-i18next";
+import {MdOutlineSort, MdSort} from "react-icons/md";
 
 const Menu = () => {
-    //
     const dispatch = useDispatch();
     const dispatchProduct = useDispatch();
 
@@ -28,10 +28,13 @@ const Menu = () => {
     // use state for load category and product
     const listCategory = useSelector(state => state.categories.categories);
     const listProduct = useSelector(state => state.products.products);
-    const selectedProduct = useSelector(state => state.product.product);
 
     // popup state for handling detail product
     const {currentPopup, openPopup, closePopup, switchPopup} = usePopup();
+
+    const {t} = useTranslation();
+
+
 
     // const fetchData = async (isReload = false) => {
     //     // if (loading || !listProduct.hasMore) return;
@@ -178,11 +181,6 @@ const Menu = () => {
         };
     }, [openPopup]);
 
-    // khong can useEffect vi khi currentPopup thay doi thi render lai
-    // useEffect(() => {
-    //     console.log('currentPopup in menu', currentPopup);
-    // }, [currentPopup]);
-
     const buttonStyle =
         "btn w-full h-[50px]  text-white text-xs md:text-[16px] bg-[#f26d78] absolute cursor-pointer group-hover:bottom-0 -bottom-14 ";
 
@@ -203,7 +201,7 @@ const Menu = () => {
                     type="text"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
-                    placeholder="Search for products"
+                    placeholder={t('MENU.SEARCH')}
                     className="outline-none border-2 border-gray-300 w-[350px] py-2 px-1 text-lg text-gray-900 border-none rounded-2xl h-12 flex items-center justify-center"
                     required
                 />
@@ -216,31 +214,27 @@ const Menu = () => {
                         <path strokeLinecap="round" strokeLinejoin="round"
                               d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
                     </svg>
-                    <span className="text-base ml-2">Filters</span>
+                    <span className="text-base ml-2">{t('MENU.FILTER')}</span>
                 </Button>
 
 
                 {/* Sort Button */}
                 <Button pill onClick={() => setIsOpen(!isOpen)}
-                        className="outline-none w-auto text-lg text-gray-900 border border-gray-300 rounded-2xl h-12 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5"
-                         stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round"
-                              d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"/>
-                    </svg>
-                    <span className="text-base ml-2">Sort</span>
+                        className="outline-none w-auto text-lg text-gray-900 border border-gray-300 rounded-2xl h-12 flex items-center justify-center" >
+                    <MdSort />
+                    <span className="text-base ml-2">{t('MENU.SORT')}</span>
                     {isOpen && (
                         <div
                             className="absolute right-0 top-[120%] bg-white shadow-lg rounded-md w-[140px] py-2 flex flex-col space-y-2 z-50">
                             <div
                                 className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => setFiltersOption({...filtersOption, order: "desc"})}>
-                                <span className="text-sm font-semibold">Giá: Giảm dần</span>
+                                onClick={() => setFiltersOption({...filtersOption, order: "asc"})}>
+                                <span className="text-sm font-semibold">{t('MENU.ASC')}</span>
                             </div>
                             <div
                                 className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => setFiltersOption({...filtersOption, order: "asc"})}>
-                                <span className="text-sm font-semibold">Giá: Tăng dần</span>
+                                onClick={() => setFiltersOption({...filtersOption, order: "desc"})}>
+                                <span className="text-sm font-semibold">{t('MENU.DESC')}</span>
                             </div>
                         </div>
                     )}
@@ -252,11 +246,11 @@ const Menu = () => {
                 className="container min-h-[1000px] max-w-[1200px] mx-auto px-4 lg:px-4 grid grid-cols-12 gap-4 mt-1 lg:mt-5">
                 {/*Left section : categories */}
                 <div className="hidden md:block col-span-3 lg:border-r lg:border-gray-400 mr-5">
-                    <h2 className="text-2xl font-bold mb-4">Danh mục sản phẩm</h2>
+                    <h2 className="text-2xl font-bold mb-4">{t('MENU.CATALOGUE')}</h2>
                     <ul>
                         <li onClick={() => filterByCategory('all')}
                             className={`mb-2 hover:text-[#6B4226] hover:translate-x-[3px] duration-300 cursor-pointer ${selectedCategory === null ? 'font-bold text-title-xsm text-[#6B4226]' : 'text-black'}`}>
-                            Tất cả sản phẩm
+                            {t('MENU.ALL')}
                         </li>
                         {listCategory?.map(category => (
                             <li key={category.id} onClick={() => filterByCategory(category.id)}
@@ -306,18 +300,19 @@ const Menu = () => {
                                                 <img
                                                     src={product.product_image || "/build/assets/Product/empty-image.png"}
                                                     alt="Product"
-                                                    className="w-full shadow-lg rounded-lg aspect-square "/>
+                                                    className="w-full shadow-lg rounded-lg aspect-square"
+                                                />
                                                 <ButtonElement
                                                     value={product.product_id}
                                                     action={handleOpenDetailProduct(product.product_id)}
                                                     style={buttonStyle}
-                                                    title="Add to Cart"
+                                                    title={t('MENU.ADD_TO_CART')}
                                                 />
                                             </div>
 
                                             <div className="product_content flex flex-row justify-between mt-4 ">
                                                 <div className="product_label">
-                                                    <h3 className="font-bold text-black truncate w-52">{product.product_name}</h3>
+                                                <h3 className="font-bold text-black truncate w-52">{product.product_name}</h3>
                                                     <p className="text-gray-600 text-xs lg:text-sm">{formatVietnameseCurrency(product.product_price)}</p>
                                                 </div>
                                                 <div className="flex justify-center items-center mb-3 lg:mb-0">

@@ -9,7 +9,7 @@ import {
     RESET_STATUS,
     REGISTER_PROCESS,
     REGISTER_SUCCESS,
-    REGISTER_FAIL,
+    REGISTER_FAIL, ADMIN_LOGIN_SUCCESS, ADMIN_LOGIN_FAIL, ADMIN_LOGIN_PROCESS,
 } from "../constant/userType";
 import Cookies from "js-cookie";
 import connectApi from "../../../settings/ConnectApi.js";
@@ -119,6 +119,25 @@ export const userRegister = (input, firebase_uid) => async (dispatch) => {
         dispatch({type: REGISTER_SUCCESS});
     } catch (error) {
         dispatch({type: REGISTER_FAIL, payload: error.message});
+    }
+}
+
+export const adminLogin = (input) => async (dispatch) => {
+    try {
+        dispatch({type: ADMIN_LOGIN_PROCESS});
+
+        const {data} = await connectApi.get("/api/admin/getCustomToken", {
+            params: {
+                firebase_uid: input.firebase_uid,
+            },
+        });
+
+        console.log('customToken', data);
+
+        dispatch({type: ADMIN_LOGIN_SUCCESS, payload: response.data});
+    } catch (error) {
+        dispatch({type: ADMIN_LOGIN_FAIL, payload: error.message});
+        console.log('error dispatch', error.message);
     }
 }
 

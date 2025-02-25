@@ -29,6 +29,7 @@ class ProductController extends BaseController
             'products.description as product_description',
             'products.price as product_price',
             'products.image as product_image',
+            'products.is_topping as is_topping',
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
@@ -52,23 +53,40 @@ class ProductController extends BaseController
         $products_count = $query->count();
 
         $return_data = [];
+        $topping_data = [];
         $prev_category_id = null;
         foreach ($products as $product) {
-            if ($prev_category_id != $product->category_id) {
-                $return_data[$product->category_id] = [
-                    'category_name' => $product->category_name,
-                    'category_id' => $product->category_id,
-                    'category_priority' => $product->priority,
-                    'category_description' => $product->category_description,
+            if ($product->is_topping === 1) {
+                if ($prev_category_id != $product->category_id) {
+                    $topping_data[$product->category_id] = [
+                        'category_name' => $product->category_name,
+                        'category_id' => $product->category_id,
+                    ];
+                    $prev_category_id = $product->category_id;
+                }
+                $topping_data[$product->category_id]['topping_list'][] = [
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->product_name,
+                    'product_description' => $product->product_description,
+                    'product_price' => $product->product_price,
                 ];
-                $prev_category_id = $product->category_id;
+            } else {
+                if ($prev_category_id != $product->category_id) {
+                    $return_data[$product->category_id] = [
+                        'category_name' => $product->category_name,
+                        'category_id' => $product->category_id,
+                        'category_priority' => $product->priority,
+                        'category_description' => $product->category_description,
+                    ];
+                    $prev_category_id = $product->category_id;
+                }
+                $return_data[$product->category_id]['product_list'][] = [
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->product_name,
+                    'product_description' => $product->product_description,
+                    'product_price' => $product->product_price,
+                ];
             }
-            $return_data[$product->category_id]['product_list'][] = [
-                'product_id' => $product->product_id,
-                'product_name' => $product->product_name,
-                'product_description' => $product->product_description,
-                'product_price' => $product->product_price,
-            ];
         }
 
         // Determine if there are more products to load
@@ -82,6 +100,7 @@ class ProductController extends BaseController
             'message' => 'Products retrieved successfully.',
             'data' => $this->toArray($return_data),
             'products_count' => $products_count,
+            'topping_data' => $this->toArray($topping_data),
             'pagination' => [
                 'last_product_id' => $lastProductId,  // Provide the ID of the last fetched product for cursor-based pagination
                 'first_product_id' => $firstProductId,
@@ -211,7 +230,7 @@ class ProductController extends BaseController
                 'product_name' => $product->product_name,
                 'product_description' => $product->product_description,
                 'product_price' => $product->product_price,
-                'product_image' => $product->product_image ? asset('build/assets/' . $product->product_image) : null,
+                'product_image' => $product->product_image ? asset('storage/build/assets/' . $product->product_image) : null,
             ];
         }
 
@@ -253,11 +272,11 @@ class ProductController extends BaseController
             'name' => $product->name,
             'price' => $product->price,
             'topping_list' => $toppingList,
-            'image_url' => $product->image ? asset('build/assets/' . $product->image) : null,
+            'image_url' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
             'productDetailImages' => $product->images->map(function ($image) {
                 return [
                     'id' => $image->id,
-                    'image_url' => asset('build/assets/' . $image->image_path),
+                    'image_url' => asset('storage/build/assets/' . $image->image_path),
                 ];
             }),
 
@@ -289,12 +308,17 @@ class ProductController extends BaseController
      */
     public function store(Request $request)
     {
+//        return response()->json([
+//            'message' => 'Products validated successfully.',
+//            'data' => $request->get('toppings_id'),
+//        ], 200);
+
         // Validate incoming data
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'thumbnailImage' => 'required|image|mimes:jpg,jpeg,png|max:2048',  // The thumbnail must be a valid image file
-            'productDetailImages' => 'required|array',  // images must be an array
+            'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',  // The thumbnail must be a valid image file
+            'productDetailImages' => 'nullable|array',  // images must be an array
             'productDetailImages.*' => 'required|image|mimes:jpg,jpeg,png|max:2048',  // Each image must be a valid image file
             'status' => 'required|in:active,inactive',
             'price' => 'nullable|numeric|min:0',
@@ -302,49 +326,73 @@ class ProductController extends BaseController
             'up_m_price' => 'nullable|numeric|min:0',
             'up_l_price' => 'nullable|numeric|min:0',
             'is_topping' => 'boolean',
+            'priority' => 'nullable|min:0',
+
             'categories_id' => 'required|array',  // Categories must be an array
+            'categories_id.*' => 'required|string|exists:categories,id',  // Each category must exist in the database
+            'toppings_id' => 'nullable|array',
         ]);
 
-        // Create the product with validated data
-        $product = Product::create($validated);
+        try {
+            // Create the product with validated data
+            $product = Product::create($validated);
 
-        if ($request->hasFile('thumbnailImage')) {
-            $image = $request->file('thumbnailImage');
-            $path = $image->store('build/assets/product_image', 'public');
-            $product->update(['image' => $path]);
-        }
+            if ($request->hasFile('thumbnailImage')) {
+                $image = $request->file('thumbnailImage');
+                $path = $image->store('build/assets/product_image', 'public');
+                $product->update(['image' => $path]);
+            }
 
-        // Attach categories to the product
-        $product->categories()->attach($validated['categories_id']);
+            // Attach categories to the product
+            $product->categories()->attach($validated['categories_id']);
 
-        // If the product is not a topping and toppings are provided, attach toppings
-        if (!$validated['is_topping'] && $request->has('toppings_id')) {
-            $product->toppings()->attach($request->get('toppings_id'));
-        }
+            // If the product is not a topping and toppings are provided, attach toppings
+            if (!$validated['is_topping'] && $request->has('toppings_id')) {
+                $toppings = $request->get('toppings_id');
 
-        // Handle image uploads
-        if ($request->hasFile('productDetailImages')) {
-            $productDetailImages = $request->file('productDetailImages');
+                // Ensure toppings is an array
+                $toppingsArray = [];
 
-            if (is_array($productDetailImages)) {
-                foreach ($productDetailImages as $image) {
-                    if ($image->isValid()) {
-                        // Store each image in 'build/assets/product_image' directory
-                        $path = $image->store('build/assets/product_image', 'public');
-
-                        // Create a record for each image in the product's images table
-                        $product->images()->create(['image_path' => $path]);
-                    } else {
-                        Log::error('Invalid image file', ['file' => $image]);
+                foreach ($toppings as $toppingJson) {
+                    $topping = json_decode($toppingJson, true); // Convert JSON string to an array
+                    if (isset($topping['toppingId']['extra_price']) && isset($topping['toppingId']['topping_id'])) {
+                        $toppingsArray[$topping['toppingId']['topping_id']] = [
+                            'extra_price' => $topping['toppingId']['extra_price'],
+                        ];
                     }
                 }
-            } else {
-                Log::error('productDetailImages is not an array', ['productDetailImages' => $productDetailImages]);
-            }
-        }
 
-        // Return the response with the newly created product, including its images
-        return response()->json(['message' => 'Product created successfully.', 'data' => $product], 201);
+                $product->toppings()->attach($toppingsArray);
+            }
+
+            // Handle image uploads
+            if ($request->hasFile('productDetailImages')) {
+                $productDetailImages = $request->file('productDetailImages');
+
+                if (is_array($productDetailImages)) {
+                    foreach ($productDetailImages as $image) {
+                        if ($image->isValid()) {
+                            // Store each image in 'build/assets/product_image' directory
+                            $path = $image->store('build/assets/product_image', 'public');
+
+                            // Create a record for each image in the product's images table
+                            $product->images()->create(['image_path' => $path]);
+                        } else {
+                            Log::error('Invalid image file', ['file' => $image]);
+                        }
+                    }
+                } else {
+                    Log::error('productDetailImages is not an array', ['productDetailImages' => $productDetailImages]);
+                }
+            }
+
+            // Return the response with the newly created product, including its images
+            return response()->json(['message' => 'Product created successfully.', 'data' => $product], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Error creating product', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error creating product', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function getToppingOptions(Request $request): JsonResponse
@@ -447,7 +495,6 @@ class ProductController extends BaseController
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-//            'images_new' => 'nullable|array', // Validate the Base64-encoded images list
             'status' => 'nullable|in:active,inactive',
             'price' => 'nullable|numeric|min:0',
             'cost' => 'nullable|numeric|min:0',
@@ -455,12 +502,12 @@ class ProductController extends BaseController
             'up_l_price' => 'nullable|numeric|min:0',
             'is_topping' => 'nullable|boolean',
             'priority' => 'nullable|min:0',
+
             'categories_id' => 'nullable|array',
             'categories_id.*' => 'nullable|string|exists:categories,id',
             'productDetailImages' => 'nullable|array',  // images must be an array
             'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',  // The thumbnail must be a valid image file
-//            'toppings_id' => 'nullable|array',
-//            'toppings_id.*' => 'nullable|string|exists:products,id',
+            'toppings_id' => 'nullable|array',
         ]);
 
         $product = Product::findOrFail($id);
@@ -472,14 +519,29 @@ class ProductController extends BaseController
         }
 
         // If not a topping, attach toppings
-        if (isset($validated['toppings_id']) && !$validated['is_topping']) {
-            $product->toppings()->sync($validated['toppings_id']);
+        if (!$validated['is_topping'] && $request->has('toppings_id')) {
+            $toppings = $request->get('toppings_id');
+
+            // Ensure toppings is an array
+            $toppingsArray = [];
+
+            foreach ($toppings as $toppingJson) {
+                $topping = json_decode($toppingJson, true); // Convert JSON string to an array
+                if (isset($topping['toppingId']['extra_price']) && isset($topping['toppingId']['topping_id'])) {
+                    $toppingsArray[$topping['toppingId']['topping_id']] = [
+                        'extra_price' => $topping['toppingId']['extra_price'],
+                    ];
+                }
+            }
+
+            // Use sync instead of attach to update the pivot table
+            $product->toppings()->sync($toppingsArray);
         }
 
         if ($request->hasFile('thumbnailImage')) {
             $image = $request->file('thumbnailImage');
-            $path = $image->store('build/assets/product_image', 'public');
-            $product->update(['image' => $path]);
+            $image->storeAs('build/assets/Product', $image->hashName(), 'public');
+            $product->update(['image' => 'Product/' . $image->hashName()]);
         }
 
         // Handle Base64 images
@@ -533,10 +595,11 @@ class ProductController extends BaseController
                 foreach ($productDetailImages as $image) {
                     if ($image->isValid()) {
                         // Store each image in 'build/assets/product_image' directory
-                        $path = $image->store('build/assets/product_image', 'public');
+
+                        $image->storeAs('build/assets/Product', $image->hashName(), 'public');
 
                         // Create a record for each image in the product's images table
-                        $product->images()->create(['image_path' => $path]);
+                        $product->images()->create(['image_path' => 'Product/' . $image->hashName()]);
                     } else {
                         Log::error('Invalid image file', ['file' => $image]);
                     }
@@ -605,7 +668,7 @@ class ProductController extends BaseController
 //                ];
 //            });
 
-        $product = Product::with(['images', 'categories'])->findOrFail($productId);
+        $product = Product::with(['images', 'categories', 'toppings'])->findOrFail($productId);
 
         $return_data = null;
 
@@ -622,6 +685,12 @@ class ProductController extends BaseController
                 'up_l_price' => $product->up_l_price,
                 'priority' => $product->priority,
                 'categories_id' => $product->categories()->pluck('id'),
+                'toppings_id' => $product->toppings->map(function ($topping) {
+                    return [
+                        'topping_id' => $topping->id,
+                        'extra_price' => $topping->pivot->extra_price,
+                    ];
+                }),
                 'thumbnailImage' => $product->image ? asset('storage/' . $product->image) : null,
                 'productDetailImages' => $product->images->map(function ($image) {
                     return [
@@ -631,7 +700,6 @@ class ProductController extends BaseController
                 }),
             ];
         }
-
         return response()->json([
             'success' => true,
             'data' => $return_data
