@@ -39,6 +39,7 @@ export const adminGetAllProducts = () => async (dispatch) => {
     dispatch({type: GET_PRODUCTS_PROCESS});
 
     const {data} = await connectApi.get(`/api/admin/products/all`);
+    console.log(data);
 
     dispatch({type: GET_PRODUCTS_SUCCESS, payload: data});
 };
@@ -102,6 +103,8 @@ export const CreateProduct = (formData) => async (dispatch) => {
         },
     });
 
+    console.log(data);
+
     dispatch({type: CREATE_PRODUCT_SUCCESS, payload: data});
 }
 
@@ -116,7 +119,6 @@ export const adminGetProduct = (id) => async (dispatch) => {
 
 export const adminUpdateProduct = (id, formData) => async (dispatch) => {
     dispatch({type: UPDATE_PRODUCT_PROCESS});
-    console.log(formData);
 
     const {data} = await connectApi.post(`/api/admin/products/update/${id}`, formData, {
         headers: {

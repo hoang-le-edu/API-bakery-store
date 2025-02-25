@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import React from "react";
 import {Navigate} from "react-router-dom";
 import SignInPasswordPopup from "../components/popup/SignInPasswordPopup.jsx";
@@ -24,14 +23,10 @@ const UserAuth = ({children}) => {
 
 const AdminAuth = ({children}) => {
     const {userLoggedIn, isPremiumUser} = useAuth();
-    console.log('userLoggedIn', userLoggedIn);
-    console.log('isPremiumUser', isPremiumUser);
-    if (userLoggedIn && Cookies.get("role") === "admin") {
+    if (userLoggedIn && isPremiumUser) {
         return children;
-    } else if (!userLoggedIn) {
-        return <Navigate to="/login"/>;
     } else {
-        return <Navigate to="/"/>;
+        return <Navigate to="/login"/>;
     }
 }
 

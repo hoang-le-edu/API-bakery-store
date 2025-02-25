@@ -1,18 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef} from 'react';
 import {formatVietnameseCurrency} from '../../../locales/currencyFormat.js';
 import {formatDateTime} from '../../../locales/dateFormat.js';
 import {createPaymentLink} from "../../../redux/action/paymentAction.js";
 import {useDispatch, useSelector} from "react-redux";
 import {usePopup} from "../../../hooks/contexts/popupContext/popupState.jsx";
 import SpinnerLoading from "../../../components/loading/SpinnerLoading.jsx";
+import {useTranslation} from "react-i18next";
 
 const OrderList = ({orders}) => {
-
+    const {t} = useTranslation();
     const dispatch = useDispatch();
     const {openPopup} = usePopup();
 
     const {paymentLink, loading} = useSelector(state => state.payment);
-    // const [currentIndex, setCurrentIndex] = useState(null);
     const currentIndexRef = useRef(null); // Use useRef to store index
 
     const payNow = async (index) => {
@@ -39,7 +39,7 @@ const OrderList = ({orders}) => {
 
     return (<div className="flex mt-4 shadow-lg rounded-lg">
             <div
-                className="scrollbar-thin h-[700px] w-full gap-6 grid overflow-y-auto rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
+                className="scrollbar-thin w-full gap-6 grid overflow-y-auto rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
                 {orders !== undefined && orders.length > 0 ? (orders.map((order, index) =>
                     (<div key={order.order_id}
                           className="w-[100%] h-full border flex flex-col justify-between border-gray-300 p-5 rounded-xl shadow-md cursor-pointer hover:bg-gray-100 transition-all duration-300 ease-in-out">
@@ -69,7 +69,7 @@ const OrderList = ({orders}) => {
                                 {/* Payment Method */}
                                 <span className={`text-sm font-medium px-2 py-1 rounded-lg shadow-sm
                                     ${order.payment_method === "Cash" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}`}>
-                                    {order.payment_method === 'Cash' ? '🛵 Cash on delivery' : '💳 Online banking'}
+                                    {order.payment_method === 'Cash' ? '🛵' + t('ORDERS.DETAIL_ORDER.PAYMENT_METHODS.COD') : '💳' + t('ORDERS.DETAIL_ORDER.PAYMENT_METHODS.ONLINE')}
                                 </span>
                             </div>
 
@@ -84,49 +84,52 @@ const OrderList = ({orders}) => {
 
 
                         {/* Order details */}
-                        <div className="overflow-y-auto w-full h-full scrollbar-thin mt-3">
-                            {order.order_detail.map((item) => (
-                                <div key={item.id} className="order-item rounded-xl w-full last:pb-4">
-                                    <div
-                                        className="flex h-full p-2 w-full items-center bg-white shadow-sm rounded-lg">
-                                        {/* Product image */}
-                                        <div className="w-[10%] min-w-[60px]">
-                                            <img src={item.image || '/build/assets/Product/empty-image.png'}
-                                                 alt="Product"
-                                                 className="w-full shadow-md rounded-lg aspect-square"/>
-                                        </div>
-                                        {/* Product info */}
-                                        <div className="flex flex-col w-full pl-3">
+                            <div className="overflow-y-auto w-full h-full scrollbar-thin mt-3">
+                                {order.order_detail.map((item) => (
+                                    <div key={item.id} className="order-item rounded-xl w-full last:pb-4">
+                                        <div
+                                            className="flex h-full p-2 w-full items-center bg-white shadow-sm rounded-lg">
+                                            {/* Product image */}
+                                            <div className="w-[10%] min-w-[60px]">
+                                                <img src={item.image || '/build/assets/Product/empty-image.png'}
+                                                     alt="Product"
+                                                     className="w-full shadow-md rounded-lg aspect-square"/>
+                                            </div>
+                                            {/* Product info */}
+                                            <div className="flex flex-col w-full pl-3">
                                                 <span
                                                     className="text-md font-semibold text-gray-700">{item.product_name} ({item.size})</span>
-                                            {item.count_topping !== 0 && (<span
-                                                className="text-xs text-gray-500">+ {item.count_topping} toppings</span>)}
-                                            <span className="text-xs text-gray-500">Quantity: {item.quantity}</span>
-                                            {item.note &&
-                                                <span className="text-xs text-gray-400">Note: {item.note}</span>}
+                                                {item.count_topping !== 0 && (<span
+                                                    className="text-xs text-gray-500">+ {item.count_topping} toppings</span>)}
+                                                <span className="text-xs text-gray-500">{t('ORDERS.DETAIL_ORDER.QUANTITY')}: {item.quantity}</span>
+                                                {item.note &&
+                                                    <span className="text-xs text-gray-400">{t('ORDERS.DETAIL_ORDER.NOTE')}: {item.note}</span>}
+                                            </div>
+                                            {/* Price */}
+                                            <div
+                                                className="font-semibold text-md text-green-600">{formatVietnameseCurrency(item.total_price)}</div>
                                         </div>
-                                        {/* Price */}
-                                        <div
-                                            className="font-semibold text-md text-green-600">{formatVietnameseCurrency(item.total_price)}</div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                                <p className="text-gray-600">
+                                    <p className="text-gray-600 text-md mt-2">{t('ORDERS.DETAIL_ORDER.NOTE')}: {order.note}</p>
+                                </p>
+                            </div>
 
-                        {/* Payment Info */}
-                        <div className="mt-3">
-                            {/* Total price and buttons */}
-                            <div className="w-full flex justify-between items-center mt-3">
-                                <p className="text-gray-600 text-md">
-                                    Total ({order.count_product} products): <span
+                            {/* Payment Info */}
+                            <div className="mt-2">
+                                {/* Total price and buttons */}
+                                <div className="w-full flex justify-between items-center">
+                                    <p className="text-gray-600 text-md">
+                                    {t('ORDERS.DETAIL_ORDER.TOTAL')} ({order.count_product} {t('ORDERS.DETAIL_ORDER.PRODUCTS')}): <span
                                     className="font-bold text-lg text-green-500">{formatVietnameseCurrency(order.total_price)}</span>
                                 </p>
                                 <div>
                                     <button
                                         onClick={() => cancelOrder(order.order_id)}
-                                        className="text-sm border border-red-400 mr-2 text-red-600 font-semibold hover:text-red-700 hover:bg-red-200 transition-all px-3 py-1 rounded-full"
+                                        className="text-sm mr-2 bg-gray text-red-600 font-semibold hover:text-red-700 hover:bg-red transition-all px-3 py-1 rounded-full shadow-2xl"
                                     >
-                                        Cancel
+                                        {t('ORDERS.DETAIL_ORDER.CANCEL')}
                                     </button>
                                     {order.payment_status === 'pending' && order.payment_method === 'Banking' && (
                                         <button
@@ -134,16 +137,16 @@ const OrderList = ({orders}) => {
                                             className="text-sm bg-green-500 text-white font-semibold hover:bg-green-600 transition-all px-3 py-1 rounded-full"
                                         >
                                             {/*Pay now*/}
-                                            {loading && currentIndexRef.current === index ? <SpinnerLoading/> : 'Pay now'}
+                                            {loading && currentIndexRef.current === index ? <SpinnerLoading/> : t('ORDERS.DETAIL_ORDER.PAY_NOW')}
                                         </button>
                                     )}
                                 </div>
                             </div>
                         </div>
-
-                    </div>))) : (<div className="flex flex-col items-center justify-center w-full h-full">
-                        <img src="/assets/no-data.png" alt="No data" className="w-40 opacity-60"/>
-                        <span className="text-gray-500 mt-2">Nothing to show</span>
+                    </div>
+                    ))) : (<div className="flex flex-col items-center justify-center w-full h-full">
+                        <img src="/storage/build/assets/no-data-found.png" alt="No data" className="w-80 opacity-60"/>
+                        <span className="text-gray-500 mt-2">{t('ORDERS.NO_ORDERS')}</span>
                     </div>
                 )}
             </div>

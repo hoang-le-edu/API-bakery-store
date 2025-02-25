@@ -4,29 +4,35 @@ import { notify } from 'notiwind';
 import {adminGetAllProducts} from "../../../redux/action/productAction.js";
 import AddProductModal from "./models/AddProductModal.jsx";
 import UpdateProductModal from "./models/UpdateProductModal.jsx";
+import {adminGetAllCategories} from "../../../redux/action/categoryAction.js";
 
 const ProductCRUD = () => {
     const dispatch = useDispatch();
-    const products = useSelector(state => state.products.products);
-    const [loading, setLoading] = useState(true);
+    const {products, topping_data, loading: productsLoading} = useSelector(state => state.products);
+    const {categories, loading: categoriesLoading} = useSelector(state => state.categories);
+
+    // const [loading, setLoading] = useState(true);
     // const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     // const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     // const [selectedProduct, setSelectedProduct] = useState(null);
-
     const [modatState, setModalState] = useState({
         isAddModalOpen: false,
         isUpdateModalOpen: false,
         selectedProductId: null,
     });
 
-    // load products
+    const fetchCategories = async () => {
+        await dispatch(adminGetAllCategories());
+    }
+
+    const fetchProducts = async () => {
+        await dispatch(adminGetAllProducts());
+    };
+
     useEffect(() => {
-        const fetchProducts = async () => {
-            await dispatch(adminGetAllProducts());
-            setLoading(false);
-        };
+        fetchCategories();
         fetchProducts();
-    }, [dispatch, products.hasMore, products.lastProductId]);
+    }, []);
 
     const handleUpdateProductClick = (product_id) => {
         setModalState({ ...modatState, isUpdateModalOpen: true, selectedProductId: product_id });
@@ -57,10 +63,6 @@ const ProductCRUD = () => {
             console.error(error);
         }
     };
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
 
     return (
         <section className="p-3 sm:p-5 antialiased h-full w-full">
@@ -123,7 +125,8 @@ const ProductCRUD = () => {
                             <AddProductModal
                                 isOpen={modatState.isAddModalOpen}
                                 onClose={() => setModalState({ ...modatState, isAddModalOpen: false })}
-                                products={products}
+                                categories={categories}
+                                topping_data={topping_data}
                             />
 
                             {/* filter button */}
@@ -165,7 +168,7 @@ const ProductCRUD = () => {
                             </tr>
                             </thead>
                             <tbody >
-                                {products.map((category, categoryIndex) => (
+                                {products?.map((category, categoryIndex) => (
                                     category.product_list.map((item, productIndex) => (
                                         <tr key={`${categoryIndex}-${productIndex}`}
                                             className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -179,7 +182,7 @@ const ProductCRUD = () => {
                                             </td>
                                             <td className="p-4">{item.product_name}</td>
                                             <td className="p-4">{item.product_description}</td>
-                                            <td className="p-4">{category.category_description}</td>
+                                            <td className="p-4">{category.category_name}</td>
                                             <td className="p-4">{item.product_price}</td>
                                             <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {/* update button */}
@@ -210,7 +213,7 @@ const ProductCRUD = () => {
                                         </tr>
                                     ))
                                 ))}
-                                {products.length === 0 && (
+                                {products?.length === 0 && (
                                     <tr>
                                         <td colSpan="6" className="p-4 text-center">No data available.</td>
                                     </tr>
@@ -281,7 +284,8 @@ const ProductCRUD = () => {
                     isOpen={modatState.isUpdateModalOpen}
                     onClose={handleCloseUpdateModal}
                     selectedProductId={modatState.selectedProductId}
-                    products={products}
+                    categories={categories}
+                    topping_data={topping_data}
                 />
             )}
         </section>

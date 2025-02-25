@@ -1,17 +1,14 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import debounce from "lodash/debounce";
-import {MdSearch} from "react-icons/md";
-import {useNavigate} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
-import React, {useState, useCallback, useEffect, useRef} from "react";
-import {getInputResult, getSingleProduct} from "../../redux/action/productAction";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import {getInputResult} from "../../redux/action/productAction";
 import SpinnerLoading from "../../components/loading/SpinnerLoading";
 import DetailProductPopup from "../../components/popup/DetailProductPopup.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
+import {useTranslation} from "react-i18next";
 
 const SearchInputElement = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const [results, setResults] = useState([]);
     const [closeInput, setCloseInput] = useState(false);
     const [searchParams, setSearchParams] = useState("");
@@ -21,6 +18,7 @@ const SearchInputElement = () => {
     const inputContainerRef = useRef(null);
 
     const {openPopup, closePopup} = usePopup();
+    const {t} = useTranslation();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -79,7 +77,7 @@ const SearchInputElement = () => {
                 <input
                     type="search"
                     className="block outline-none w-full py-2 px-2 md:px-5 text-sm text-gray-900 border border-gray-300 rounded-lg "
-                    placeholder="Search for products"
+                    placeholder={t("HEADER.SEARCH_FOR_PRODUCTS")}
                     value={searchParams}
                     onChange={handleInput}
                     required
@@ -99,7 +97,7 @@ const SearchInputElement = () => {
                         </div>
                     ) : inputResults.length === 0 ? (
                         <div className="flex items-center justify-center">
-                            <span>No products match your search.</span>
+                            <span>{t('HEADER.NO_PRODUCTS_FOUND')}</span>
                         </div>
                     ) : (
                         inputResults.map((result, index) => {

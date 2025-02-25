@@ -421,12 +421,6 @@ class AuthenticationController extends BaseController
 
     }
 
-    public function getAdmin(): JsonResponse
-    {
-        $users = User::where('is_admin', 1)->get();
-        return $this->sendResponse($users, 'Admin retrieved successfully.');
-    }
-
     public function setCustomTokenForAdmin(Request $request): JsonResponse
     {
         $request->validate([
@@ -450,6 +444,37 @@ class AuthenticationController extends BaseController
         return $this->sendResponse($user, 'Custom token set successfully.');
     }
 
+    public function getCustomTokenForAdmin(Request $request): JsonResponse
+    {
+        try {
+            Log::info('Incoming request:', $request->all()); // Debugging
+
+            $validated = $request->validate([
+                'firebase_uid' => 'required|string'
+            ]);
+
+            $user = User::where('firebase_uid', $validated['firebase_uid'])->first();
+
+            if (!$user) {
+                return response()->json(['message' => 'Unauthorized or User not found.'], 401);
+            }
+
+            if ($user->is_admin === 0) {
+                return response()->json(['message' => 'Unauthorized.'], 401);
+            }
+
+            return response()->json([
+                'success' => true,
+                'custom_token' => $user->custom_token
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getCustomTokenForAdmin: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+
     public function addAdmin(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -468,8 +493,6 @@ class AuthenticationController extends BaseController
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         $input['is_admin'] = 1;
-
-//        return $this->sendResponse($input, 'Admin created successfully.');
 
         $user = User::create($input);
 

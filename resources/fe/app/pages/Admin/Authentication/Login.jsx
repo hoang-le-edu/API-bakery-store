@@ -1,15 +1,14 @@
 import React, {useRef, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
 import SpinnerLoading from '../../../components/loading/SpinnerLoading.jsx';
 import {doSignInWithCustomToken, doSignInWithEmailAndPassword} from "../../../modules/firebase/auth.js";
-import {notify} from "../../../layouts/notification/notify.jsx";
+import {notify} from "../../../layouts/Notification/notify.jsx";
+import axios from 'axios';
+import {useNavigate} from "react-router-dom";
 
 const Login = () => {
     const inputRef = useRef({email: '', password: ''});
-    const dispatch = useDispatch();
-    const {loading} = useSelector((state) => state.user);
-
     const [isSigningIn, setIsSigningIn] = useState(false);
+    const navigate = useNavigate();
 
     const handleChangeInput = (e) => {
         const {name, value} = e.target;
@@ -26,14 +25,13 @@ const Login = () => {
                 const {user} = await doSignInWithEmailAndPassword(inputRef.current.email, inputRef.current.password);
 
                 // get custom token from server by firebase_uid
+                const {data} = await axios.post('/api/auth/getCustomToken', {firebase_uid: user.uid});
 
-
-                // const {data} = await axios.get('/api/auth/getCustomTokenForAdmin', {email: inputRef.current.email, pawword: inputRef.current.password});
-
-                if(user) {
-                    await doSignInWithCustomToken()
+                if (data) {
+                    await doSignInWithCustomToken(data.custom_token);
                 }
                 setIsSigningIn(false);
+                navigate('/admin/products');
                 notify('success', 'Login successfully');
             } catch (error) {
                 setIsSigningIn(false);
@@ -43,7 +41,7 @@ const Login = () => {
     };
 
     return (
-        <div className="overlay fixed inset-0 bg-gray-50 dark:bg-gray-900 flex items-center justify-center z-50">
+        <div className=" fixed inset-0 bg-gray-50 dark:bg-gray-900 flex items-center justify-center z-50">
             <div
                 className="w-full max-w-md bg-white rounded-lg shadow dark:border dark:bg-gray-800 dark:border-gray-700 p-6">
                 <h2 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">Sign In</h2>
@@ -80,7 +78,7 @@ const Login = () => {
                     </div>
                     <button type="submit"
                             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                        {loading ? <SpinnerLoading/> : 'Login'}
+                        {isSigningIn ? <SpinnerLoading/> : 'Login'}
                     </button>
                 </form>
             </div>

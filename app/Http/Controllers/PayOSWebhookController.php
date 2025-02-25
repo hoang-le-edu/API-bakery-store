@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Http;
 
 class PayOSWebhookController extends Controller
 {
-    public function handlePayOSWebhook(Request $request)
+    public function handlePayOSWebhook(Request $request): \Illuminate\Http\JsonResponse
     {
+        Log::debug('PayOS Webhook test received');
         $body = json_decode($request->getContent(), true);
         // Handle webhook test
         if (in_array($body["data"]["description"], ["Ma giao dich thu nghiem", "VQRIO123"])) {

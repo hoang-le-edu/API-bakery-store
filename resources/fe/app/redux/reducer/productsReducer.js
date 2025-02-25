@@ -68,12 +68,14 @@ export const productsReducer = (state = products, action) => {
             const products = action.payload.data;
             const total = action.payload.products_count;
             const hasMore = action.payload.pagination.has_more;
+            const topping_data = action.payload.topping_data;
             // const firstProductId = action.payload.pagination.first_product_id;
             // const lastProductId = action.payload.pagination.last_product_id;
             // console.log("products reducer", action.payload, total);
             return {
                 ...state,
                 products: products,
+                topping_data: topping_data,
                 total: total,
                 loading: false,
                 hasMore: hasMore,

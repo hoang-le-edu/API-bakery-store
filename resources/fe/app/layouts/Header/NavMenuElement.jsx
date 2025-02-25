@@ -1,9 +1,12 @@
 import React, {useCallback} from "react";
 import {MdOutlineClose} from "react-icons/md";
 import {Link, useLocation} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 
 const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) => {
     const location = useLocation();
+
+    const {t} = useTranslation();
 
     const navMenuBtn = (menuPath) => `${
         location.pathname === menuPath ? "text-tertiary" : ""
@@ -16,10 +19,10 @@ const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) =>
     });
 
     const navMenuName = [
-        {name: "Home", path: "/", visible: true},
-        {name: "Menu", path: "/menu", visible: true},
-        {name: "Login", visible: !userLoggedIn, onClick: handleLoginClick}, // Show Signin only if user array is empty
-        {name: "Order", path: "/orders", visible: userLoggedIn},
+        {name: t('HEADER.HOME'), path: "/", visible: true},
+        {name: t('HEADER.MENU'), path: "/menu", visible: true},
+        {name: t('HEADER.LOGIN'), visible: !userLoggedIn, onClick: handleLoginClick}, // Show Signin only if user array is empty
+        {name: t('HEADER.ORDER'), path: "/orders", visible: userLoggedIn},
     ];
 
     const handleMobileNavMenu = () => {
@@ -39,7 +42,7 @@ const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) =>
             </div>
 
             <nav
-                className="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 text-2xl md:text-sm ">
+                className="flex flex-row justify-center items-center text-2xl md:text-sm">
                 {navMenuName.map((menu, index) => {
                     if (!menu.visible) return null;
                     return (
