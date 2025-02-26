@@ -40,3 +40,15 @@ export const createPaymentLink = (order_id) => async (dispatch) => {
 
     dispatch({ type: "CREATE_PAYMENT_LINK_SUCCESS", payload: response.data });
 }
+
+export const customerCancelOrder = (order_id) => async (dispatch) => {
+    dispatch({ type: "CANCEL_ORDER_PROCESS" });
+
+    const response = await connectApi.post("/api/customer/cancelOrder", {order_id: order_id});
+
+    dispatch({ type: "CANCEL_ORDER_SUCCESS", payload: response.data });
+}
+
+export const resetPaymentLink = () => async (dispatch) => {
+    dispatch({ type: "RESET_PAYMENT_LINK" });
+}

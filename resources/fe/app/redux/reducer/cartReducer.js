@@ -20,6 +20,7 @@ const cartState = {
     loading: false,
     success: false,
     fail: false,
+    quantity: 0,
 };
 
 export const cartReducer = (state = cartState, action) => {
@@ -34,6 +35,7 @@ export const cartReducer = (state = cartState, action) => {
             return {
                 ...state,
                 cartData: action.payload.data,
+                quantity: action.payload.data?.length,
                 loading: false,
             };
 
@@ -67,44 +69,10 @@ export const cartReducer = (state = cartState, action) => {
             };
 
         case ADD_CART_SUCCESS: {
-            const product = action.payload.data;
-            const amount = action.payload.amount;
-            const cartIndex = state.cart.findIndex((item) => item.id === product.id);
-
-            let newCart;
-
-            if (cartIndex < 0) {
-                if (amount <= product.stock) {
-                    const newProduct = {...product, amount: amount};
-                    newCart = [...state.cart, newProduct];
-                } else {
-                    return {
-                        ...state,
-                        fail: true,
-                        loading: false,
-                    };
-                }
-            } else {
-                const updatedAmount = state.cart[cartIndex].amount + amount;
-                if (updatedAmount <= product.stock) {
-                    newCart = state.cart.map((item) =>
-                        item.id === product.id ? {...item, amount: updatedAmount} : item
-                    );
-                } else {
-                    return {
-                        ...state,
-                        fail: true,
-                        loading: false,
-                    };
-                }
-            }
-
-            // Update local storage
-            localStorage.setItem("cart", JSON.stringify(newCart));
-
             return {
                 ...state,
-                cartData: newCart,
+                cartData: action.payload.data,
+                quantity: action.payload.data?.length,
                 success: true,
                 loading: false,
             };
@@ -112,14 +80,11 @@ export const cartReducer = (state = cartState, action) => {
 
         case REMOVE_CART_SUCCESS: {
             const id = action.payload;
-            const cartItem = state.cart.filter((item) => item.id !== id);
-
-            // Update local storage
-            localStorage.setItem("cart", JSON.stringify(cartItem));
 
             return {
                 ...state,
-                cartData: cartItem,
+                cartData: action.payload.data,
+                quantity: action.payload.data?.length,
                 loading: false,
             };
         }

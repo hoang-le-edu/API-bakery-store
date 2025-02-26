@@ -518,6 +518,7 @@ class ProductController extends BaseController
             $product->categories()->sync($validated['categories_id']);
         }
 
+        $product->toppings()->detach();
         // If not a topping, attach toppings
         if (!$validated['is_topping'] && $request->has('toppings_id')) {
             $toppings = $request->get('toppings_id');
@@ -535,7 +536,7 @@ class ProductController extends BaseController
             }
 
             // Use sync instead of attach to update the pivot table
-            $product->toppings()->sync($toppingsArray);
+            $product->toppings()->attach($toppingsArray);
         }
 
         if ($request->hasFile('thumbnailImage')) {

@@ -199,7 +199,6 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
     };
 
     const handleClosePopup = () => {
-        console.log('isEdit', isEdit);
         if (isEdit) {
             openPopup({popupName: 'cartDrawer'});
         } else {

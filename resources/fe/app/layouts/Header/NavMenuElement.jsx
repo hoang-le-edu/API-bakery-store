@@ -2,6 +2,7 @@ import React, {useCallback} from "react";
 import {MdOutlineClose} from "react-icons/md";
 import {Link, useLocation} from "react-router-dom";
 import {useTranslation} from "react-i18next";
+import {useAuth} from "../../hooks/contexts/authContext/index.jsx";
 
 const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) => {
     const location = useLocation();
@@ -18,11 +19,13 @@ const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) =>
         switchPopup({popupName: "login"});
     });
 
+    const {isPremiumUser} = useAuth();
+
     const navMenuName = [
         {name: t('HEADER.HOME'), path: "/", visible: true},
         {name: t('HEADER.MENU'), path: "/menu", visible: true},
-        {name: t('HEADER.LOGIN'), visible: !userLoggedIn, onClick: handleLoginClick}, // Show Signin only if user array is empty
-        {name: t('HEADER.ORDER'), path: "/orders", visible: userLoggedIn},
+        {name: t('HEADER.LOGIN'), visible: !userLoggedIn && !isPremiumUser, onClick: handleLoginClick}, // Show Signin only if user array is empty
+        {name: t('HEADER.ORDER'), path: "/orders", visible: userLoggedIn && !isPremiumUser},
     ];
 
     const handleMobileNavMenu = () => {

@@ -37,7 +37,6 @@ export const adminGetAllCategories = () => async (dispatch) => {
         dispatch({type: ADMIN_GET_CATEGORIES_PROCESS});
 
         const {data} = await connectApi.get("/api/admin/categories/all");
-        console.log("data: ", data);
 
         dispatch({type: ADMIN_GET_CATEGORIES_SUCCESS, payload: data});
     } catch (error) {

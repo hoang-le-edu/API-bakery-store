@@ -30,6 +30,7 @@ const Login = () => {
                 if (data) {
                     await doSignInWithCustomToken(data.custom_token);
                 }
+
                 setIsSigningIn(false);
                 navigate('/admin/products');
                 notify('success', 'Login successfully');
@@ -41,7 +42,7 @@ const Login = () => {
     };
 
     return (
-        <div className=" fixed inset-0 bg-gray-50 dark:bg-gray-900 flex items-center justify-center z-50">
+        <div className="inset-0 bg-gray-50 flex items-center justify-center mt-20 mb-30">
             <div
                 className="w-full max-w-md bg-white rounded-lg shadow dark:border dark:bg-gray-800 dark:border-gray-700 p-6">
                 <h2 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">Sign In</h2>

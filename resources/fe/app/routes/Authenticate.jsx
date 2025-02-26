@@ -13,8 +13,8 @@ const NonUserAuth = ({children}) => {
 };
 
 const UserAuth = ({children}) => {
-    const {userLoggedIn} = useAuth();
-    if (userLoggedIn) {
+    const {userLoggedIn, isPremiumUser} = useAuth();
+    if (userLoggedIn && !isPremiumUser) {
         return children;
     } else if (!userLoggedIn) {
         return <SignInPasswordPopup/>;

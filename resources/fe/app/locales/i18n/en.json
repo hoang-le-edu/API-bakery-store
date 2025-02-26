@@ -55,7 +55,14 @@
         "LOGIN_NOW": "Login now",
         "SAME_PASSWORD": "Password and confirm password must be the same",
         "REGISTER_SUCCESS": "Register successfully",
-        "REGISTER_FAILED": "Register failed"
+        "REGISTER_FAILED": "Register failed",
+        "REGISTERING": "Registering...",
+        "ADD_PHONE": {
+            "TITLE": "Add phone number for your account",
+            "PHONE": "Phone number",
+            "PLACEHOLDER_PHONE": "Enter your phone number",
+            "ADD": "Add"
+        }
     },
 
     "HOME": {

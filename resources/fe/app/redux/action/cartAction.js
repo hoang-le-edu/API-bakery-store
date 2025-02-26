@@ -56,6 +56,7 @@ export const resetStatus = () => async (dispatch) => {
 
 export const fetchCart = () => async (dispatch) => {
     dispatch({ type: FETCH_CART_PROCESS });
+
     try {
         const { data } = await connectApi.get("/api/cart/fetchCart");
 
@@ -71,6 +72,7 @@ export const addProductToCart = (product, order_ids) => async (dispatch) => {
     dispatch({ type: ADD_CART_PROCESS });
     try {
         const { data } = await connectApi.post(`/api/cart/addProductToCart`, { product, order_ids });
+
         dispatch({ type: ADD_CART_SUCCESS, payload: data });
     } catch (error) {
         console.error("Error adding product to cart:", error);

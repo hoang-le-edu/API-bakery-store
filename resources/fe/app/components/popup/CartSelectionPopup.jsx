@@ -71,7 +71,7 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
 
     if (!isVisible) return null;
 
-    return (<div className="overlay fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center"
+    return (<div className="overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
                  onClick={closePopup}>
         <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-[90%] h-auto lg:w-full relative"
              onClick={(e) => e.stopPropagation()}>

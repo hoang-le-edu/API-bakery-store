@@ -1,18 +1,17 @@
 import React, {useRef, useState} from "react";
-import {useNavigate} from "react-router-dom";
-import {useDispatch, useSelector} from "react-redux";
+import {useDispatch} from "react-redux";
 import InputElement from "../element/InputElement.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 import {userRegister} from "../../redux/action/userAction.js";
 import {doCreateUserWithEmailAndPassword, doUpdateProfile} from "../../modules/firebase/auth.js";
 import {notify} from "../../layouts/Notification/notify.jsx";
 import {useTranslation} from "react-i18next";
+import {doSignOut} from "../../modules/firebase/auth.js";
+
 
 const Register = ({isVisible, closePopup, switchPopup}) => {
-    const navigate = useNavigate();
     const dispatch = useDispatch();
     const {t} = useTranslation();
-    // const [input, setInput] = useState({ name: "", email: "", phone_number: "", date_of_birth:"", gender:"", password: "", c_password: "" });
     const inputRef = useRef({
         name: "",
         email: "",
@@ -23,14 +22,8 @@ const Register = ({isVisible, closePopup, switchPopup}) => {
         c_password: ""
     });
     const [error, setError] = useState("");
-    const {loading, success, fail, message} = useSelector((state) => state.user);
 
     const [isRegistering, setIsRegistering] = useState(false);
-
-
-    // const handleChangeInput = (e) => {
-    //     setInput({ ...input, [e.target.name]: e.target.value });
-    // }
 
     const handleChangeInput = (e) => {
         const {name, value} = e.target;
@@ -57,28 +50,19 @@ const Register = ({isVisible, closePopup, switchPopup}) => {
                 const check = await doUpdateProfile(inputRef.current.name, null);
 
                 // save user in database
-                dispatch(userRegister(inputRef.current, user.uid));
+                await dispatch(userRegister(inputRef.current, user.uid));
 
                 setIsRegistering(false);
                 notify("success", t('REGISTER.REGISTER_SUCCESS'));
                 closePopup();
             } catch (error) {
                 setIsRegistering(false);
-                notify("error", t('REGISTER.REGISTER_FAILED'));
+                notify("error", error.message);
+                doSignOut();
+                // notify("error", t('REGISTER.REGISTER_FAILED'));
             }
         }
     };
-
-    // useEffect(() => {
-    //     if (success) {
-    //         // navigate("/login");
-    //         dispatch(resetStatus());
-    //         switchPopup('login');
-    //     } else if (fail) {
-    //         setError(message);
-    //         dispatch(resetStatus());
-    //     }
-    // }, [dispatch, navigate, message, success, fail]);
 
     if (!isVisible) return null;
 
@@ -188,14 +172,14 @@ const Register = ({isVisible, closePopup, switchPopup}) => {
                         <button
                             type="submit"
                             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                            {loading ? <SpinnerLoading/> : t('REGISTER.REGISTER')}
+                            {isRegistering ? <SpinnerLoading/> : t('REGISTER.REGISTER')}
                         </button>
                     </div>
                     {error && <div className="text-red-500 text-sm">{error}</div>}
 
                     <div className="text-center mt-4">
                         <span className="text-sm text-gray-700">{t('REGISTER.HAVE_ACCOUNT')} </span>
-                        <button type="button" onClick={() => switchPopup('login')}
+                        <button type="button" onClick={() => switchPopup({popupName: 'login'})}
                                 className="text-sm text-blue-500 hover:underline">{t('REGISTER.LOGIN_NOW')}
                         </button>
                     </div>
