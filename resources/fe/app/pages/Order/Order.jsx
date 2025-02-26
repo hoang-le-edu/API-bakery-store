@@ -28,7 +28,7 @@ const Order = () => {
 
     // cap nhat data sau khi fetch xong
     useEffect(() => {
-
+        console.log('newOrders', newOrders);
     }, [newOrders]);
 
     const fetchOrders = useCallback(
@@ -84,7 +84,7 @@ const Order = () => {
                                         aria-selected={activeTab === tab.id}
                                         onClick={() => onTabChange(tab.id)}
                                     >
-                                        {tab.label}
+                                        {tab.label} {newOrders?.[tab.id]?.length > 0 && <span className="text-white bg-red rounded-full px-2 py-1 text-xs ml-2">{newOrders?.[tab.id]?.length}</span>}
                                     </button>
                                 </li>
                             ))}
@@ -148,7 +148,7 @@ const Order = () => {
                     {/*        <span className="text-white">Refresh</span>*/}
                     {/*      </Button>*/}
                     {/*</div>*/}
-                    {loading ? <SpinnerLoading/> : <OrderList orders={newOrders?.[activeTab]}/>}
+                    {loading ? <SpinnerLoading/> : <OrderList orders={newOrders?.[activeTab]} refetchOrder={fetchOrders}/>}
                 </div>
             </div>
         </div>

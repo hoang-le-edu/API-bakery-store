@@ -55,7 +55,14 @@
         "LOGIN_NOW": "Đăng nhập ngay",
         "SAME_PASSWORD": "Mật khẩu và xác nhận mật khẩu phải giống nhau",
         "REGISTER_SUCCESS": "Đăng ký thành công",
-        "REGISTER_FAILED": "Đăng ký thất bại"
+        "REGISTER_FAILED": "Đăng ký thất bại",
+        "REGISTERING": "Đang đăng ký...",
+        "ADD_PHONE": {
+            "TITLE": "Thêm số điện thoại cho tài khoản của bạn",
+            "PHONE": "Số điện thoại",
+            "PLACEHOLDER_PHONE": "Nhập số điện thoại của bạn",
+            "ADD": "Thêm"
+        }
     },
 
     "HOME": {

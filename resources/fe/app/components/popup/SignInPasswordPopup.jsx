@@ -6,6 +6,7 @@ import {doSignInWithEmailAndPassword, doSignInWithGoogle} from "../../modules/fi
 import {notify} from "../../layouts/Notification/notify.jsx";
 import {useTranslation} from "react-i18next";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
+import {fetchCart} from "../../redux/action/cartAction.js";
 
 const SignInPasswordPopup = ({isVisible, switchPopup}) => {
     const inputRef = useRef({email: '', password: ''});
@@ -32,10 +33,14 @@ const SignInPasswordPopup = ({isVisible, switchPopup}) => {
                 const data = await doSignInWithEmailAndPassword(inputRef.current.email, inputRef.current.password);
                 setIsSigningIn(false);
                 closePopup();
+                await dispatch(fetchCart());
                 notify('success', t('LOGIN.LOGIN_SUCCESS'));
             } catch (error) {
                 setIsSigningIn(false);
                 notify('error', t('LOGIN.LOGIN_FAILED'));
+            }
+            finally {
+                await dispatch(fetchCart());
             }
         }
     };
@@ -57,6 +62,9 @@ const SignInPasswordPopup = ({isVisible, switchPopup}) => {
                 setIsSigningIn(false);
                 notify('error', t('LOGIN.LOGIN_FAILED'));
             }
+            finally {
+                await dispatch(fetchCart());
+            }
         }
     }
 
@@ -72,8 +80,7 @@ const SignInPasswordPopup = ({isVisible, switchPopup}) => {
     if (!isVisible) return null;
 
     return (
-        <div className="overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
-             onClick={closePopup}>
+        <div className="overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={closePopup}>
             <div className="bg-white rounded-lg shadow-lg w-[90%] md:w-1/2 lg:w-1/3 p-6"
                  onClick={(e) => e.stopPropagation()}>
                 <h2 className="text-xl font-bold text-center mb-4">{t('LOGIN.LOGIN')}</h2>

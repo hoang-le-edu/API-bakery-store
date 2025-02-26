@@ -328,7 +328,7 @@ const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, cate
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Product Cost"
-                                min={1000} step={500}
+                                min={0}
                                 required
                             />
                         </div>
@@ -347,7 +347,7 @@ const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, cate
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Product Price"
-                                min={1000} step={500}
+                                min={0}
                                 required
                             />
                         </div>
@@ -366,7 +366,7 @@ const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, cate
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Medium Price"
-                                min={1000} step={500}
+                                min={0}
                             />
                         </div>
 
@@ -384,7 +384,7 @@ const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, cate
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Large Price"
-                                min={1000} step={500}
+                                min={0}
                             />
                         </div>
 
@@ -477,7 +477,7 @@ const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, cate
                                             value={form.toppingId.find((topping_data) => topping_data.topping_id === topping.product_id)?.extra_price}
                                             onChange={handleInputChange}
                                             className="mb-2 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            min={500} step={500}
+                                            min={0}
                                         />)}
                                     </div>)))}
                             </div>

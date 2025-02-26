@@ -285,7 +285,7 @@ const AddProductModal = ({isOpen, onClose, categories, topping_data}) => {
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Product Cost"
-                                min={1000} step={500}
+                                min={0}
                                 required
                             />
                         </div>
@@ -304,7 +304,7 @@ const AddProductModal = ({isOpen, onClose, categories, topping_data}) => {
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Product Price"
-                                min={1000} step={500}
+                                min={0}
                                 required
                             />
                         </div>
@@ -323,7 +323,7 @@ const AddProductModal = ({isOpen, onClose, categories, topping_data}) => {
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Medium Price"
-                                min={1000} step={500}
+                                min={0}
                             />
                         </div>
 
@@ -341,7 +341,7 @@ const AddProductModal = ({isOpen, onClose, categories, topping_data}) => {
                                 onChange={handleInputChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Large Price"
-                                min={1000} step={500}
+                                min={0}
                             />
                         </div>
 

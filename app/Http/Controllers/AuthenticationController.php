@@ -87,7 +87,7 @@ class AuthenticationController extends BaseController
                     'user_id' => $user->id
                 ]);
 
-                $user->assignRole('Customer');
+//                $user->assignRole('Customer');
             }
 
             $success['token'] = $user->createToken('MyApp')->plainTextToken;

@@ -9,7 +9,7 @@ import {notify} from "../Notification/notify.jsx";
 const UserSetting = ({isVisible}) => {
     const navigate = useNavigate();
     const popupRef = useRef(null);
-    const {openPopup, closePopup} = usePopup();
+    const {closePopup} = usePopup();
     const {t, i18n} = useTranslation();
 
     const handleLogout = async () => {

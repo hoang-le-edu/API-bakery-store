@@ -19,10 +19,10 @@ vite.config.js
 
 # be
 /config
-/database
+#/database
 /node_modules
 /public
-/routes/api.php
+#/routes/api.php
 /storage
 
 # fe
