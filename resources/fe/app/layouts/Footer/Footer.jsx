@@ -32,14 +32,27 @@ const Footer = () => {
                     {/* Third Column: Contact Information */}
                     <div>
                         <h2 className="text-2xl font-semibold mb-4">{t('FOOTER.CONTACT')}</h2>
-                        <ul className="space-y-3 text-lg">
-                            <li>{t('FOOTER.PHONE')}: <a href="tel:0927818888" className="hover:text-gray-200 transition-all">0927818888
-                                (Dì Duyên)</a></li>
-                            <li>{t('FOOTER.PHONE')}: <a href="tel:0566979979" className="hover:text-gray-200 transition-all">0566979979
-                                (Bé Thư)</a></li>
-                            <li>{t('FOOTER.WEBSITE')}: <a href="https://bepmetay.com" target="_blank" rel="noopener noreferrer"
-                                        className="hover:text-gray-200 transition-all">bepmetay.com</a></li>
-                        </ul>
+                        <table className="text-lg border-separate border-spacing-2">
+                            <tbody>
+                            <tr>
+                                <td>{t('FOOTER.PHONE')}:</td>
+                                <td>0566979979</td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td>0927818888</td>
+                            </tr>
+                            <tr>
+                                <td>{t('FOOTER.WEBSITE')}:</td>
+                                <td>
+                                    <a href="https://bepmetay.com" target="_blank" rel="noopener noreferrer"
+                                       className="hover:text-gray-200 transition-all">
+                                        bepmetay.com
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     {/* Fourth Column: Social Media Links */}

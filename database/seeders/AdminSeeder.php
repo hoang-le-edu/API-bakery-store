@@ -27,7 +27,7 @@ class AdminSeeder extends Seeder
                 'api_token' => Str::random(80),
                 'user_type' => 'user',
                 'created_by' => '1'
-            ])->assignRole('Administrator');
+            ]);
         }
     }
 }

@@ -147,6 +147,7 @@ class OrderController extends Controller
                 'order_date' => $order->updated_at,
                 'rate' => $order->rate,
                 'feedback' => $order->customer_feedback,
+                'note' => $order->note,
             ];
             foreach ($orderDetails as $orderDetail) {
                 $data['order_detail'][] = [
@@ -157,7 +158,7 @@ class OrderController extends Controller
                     'product_price' => $orderDetail->product->price,
                     'size' => $orderDetail->size,
                     'quantity' => $orderDetail->quantity,
-                    'image' => $orderDetail->product->image ? asset('/build/assets/' . $orderDetail->product->image) : null,
+                    'image' => $orderDetail->product->image ? asset('storage/build/assets/' . $orderDetail->product->image) : null,
                     'note' => $orderDetail->note,
                     'total_price' => $orderDetail->total_price,
                     'count_topping' => $orderDetail->toppings->count(),
@@ -837,7 +838,7 @@ class OrderController extends Controller
                         'product_price' => $orderDetail->product->price,
                         'size' => $orderDetail->size,
                         'quantity' => $orderDetail->quantity,
-                        'image' => $orderDetail->product->image ? asset('/build/assets/' . $orderDetail->product->image) : null,
+                        'image' => $orderDetail->product->image ? asset('/storage/build/assets/' . $orderDetail->product->image) : null,
                         'note' => $orderDetail->note,
                         'total_price' => $orderDetail->total_price,
                         'count_topping' => $orderDetail->toppings->count(),
@@ -1097,8 +1098,13 @@ class OrderController extends Controller
             'order_id' => 'required | exists:orders,id',
         ]);
 
-        $currentUser = auth()->user();
-        $customer = Customer::where('user_id', $currentUser->id)->first();
+        $user = $this->checkFirebaseUser($request);
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized or User not found.'], 401);
+        }
+
+        $customer = $user->customer;
 
         if (!$customer) {
             return response()->json(['message' => 'Customer not found.'], 404);
@@ -1180,10 +1186,13 @@ class OrderController extends Controller
             'source' => 'nullable | in:Offline,Online',
             'team_id' => 'nullable | uuid | exists:teams,id',
             'created_by' => 'nullable | uuid | exists:users,id',
+            'toppings' => 'nullable | array',
         ]);
 
         $order = Order::findOrFail($id);
         $order->update($validated);
+
+
 
         return response()->json(['message' => 'Order updated successfully . ', 'data' => $order]);
     }

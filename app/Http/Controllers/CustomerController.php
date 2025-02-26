@@ -93,7 +93,7 @@ class CustomerController extends Controller
             $user = User::create($userData);
 
             // Assign the customer role to the user
-            $user->assignRole('customer'); // Modify role as per your requirement
+//            $user->assignRole('customer'); // Modify role as per your requirement
 
             // Now create the Customer and associate it with the created User
             $customer = Customer::create([

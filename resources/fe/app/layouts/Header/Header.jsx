@@ -1,10 +1,8 @@
 import {BsCart3} from "react-icons/bs";
-import Cookies from "js-cookie";
 import {useCallback, useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {Link, useNavigate} from "react-router-dom";
 import NavMenuElement from "./NavMenuElement.jsx";
-import {getUserInfo,} from "../../redux/action/userAction.js";
 import SearchInputElement from "./SearchInputElement.jsx";
 import UserSetting from "./UserSetting.jsx";
 import SignInPasswordPopup from "../../components/popup/SignInPasswordPopup.jsx";
@@ -17,15 +15,12 @@ import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import CartSelectionPopup from "../../components/popup/CartSelectionPopup.jsx";
 import QRPaymentPopup from "../../components/popup/QRPaymentPopup.jsx";
 import {MdSettings} from "react-icons/md";
+import {fetchCart} from "../../redux/action/cartAction.js";
 
 const Header = () => {
-    const accessToken = Cookies.get("accessToken");
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [state, setState] = useState({
-        cartOpen: false,
-        profileOpen: false,
-    });
+
     const [openMenu, setOpenMenu] = useState(false);
 
     const {currentPopup, openPopup, closePopup, switchPopup} = usePopup();
@@ -33,18 +28,14 @@ const Header = () => {
     // wait data from switch popup detailProduct
     const selectedProduct = useSelector(state => state.product.product);
 
+    const {quantity: cartQuantity} = useSelector(state => state.cart);
+
     // return user logged in or not
-    const {userLoggedIn} = useAuth();
+    const {userLoggedIn, isPremiumUser} = useAuth();
 
     const handleNavMenu = () => {
         setOpenMenu(!openMenu);
     };
-
-    useEffect(() => {
-        if (accessToken) {
-            dispatch(getUserInfo());
-        }
-    }, [dispatch, accessToken]);
 
     const handleCartClick = useCallback((e) => {
         if (!userLoggedIn)
@@ -54,8 +45,10 @@ const Header = () => {
     }, [openPopup]);
 
     useEffect(() => {
-        console.log("currentPopup in header: ", currentPopup);
-    }, [currentPopup]);
+        if (userLoggedIn && !isPremiumUser) {
+            dispatch(fetchCart());
+        }
+    }, [dispatch]);
 
     return (
         <header className="bg-white fixed top-0 w-full z-10 px-2 border-b">
@@ -90,9 +83,16 @@ const Header = () => {
                         {/* Buttons (Cart, Profile, Menu) */}
                         <div className="flex flex-row justify-center items-center space-x-3 min-w-max">
                             {/* Cart button */}
-                            <button className="relative" onClick={handleCartClick}>
-                                <BsCart3 className="text-lg lg:text-xl"/>
-                            </button>
+                            {!isPremiumUser &&
+                                <button className="relative" onClick={handleCartClick}>
+                                    <BsCart3 className="text-lg lg:text-xl"/>
+                                    {cartQuantity > 0 && (
+                                        <span
+                                            className="absolute -top-2 -right-3 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-[#f26d78] rounded-full">
+                                                {cartQuantity}
+                                        </span>
+                                    )}
+                                </button>}
 
                             {/* Profile button */}
                             {userLoggedIn && (
@@ -128,8 +128,6 @@ const Header = () => {
             {/* Add phone number when user login by Google first time */}
             {currentPopup?.popupName === 'addPhone' &&
                 <AddPhoneNumberPopup isVisible={currentPopup?.popupName === 'addPhone'}
-                                     closePopup={closePopup}
-                                     switchPopup={switchPopup}
                                      registerData={currentPopup.registerData}/>}
 
             {/* Select available cart when user add product to cart */}

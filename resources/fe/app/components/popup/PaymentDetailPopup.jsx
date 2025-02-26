@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
 import connectApi from "../../../settings/ConnectApi.js";
-import {createPaymentLink, fetchDistricts, fetchWards} from "../../redux/action/paymentAction.js";
+import {createPaymentLink, fetchDistricts, fetchWards, resetPaymentLink} from "../../redux/action/paymentAction.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 import {notify} from "../../layouts/Notification/notify.jsx";
@@ -55,8 +55,6 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
     let socket = null;
 
     const {t} = useTranslation();
-
-    console.log('payment detail rendered');
 
     // useEffect(() => {
     //     const date = new Date();
@@ -211,11 +209,10 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
     };
 
     useEffect(() => {
-        console.log('paymentLink:', paymentLink);
-
         if (paymentLink !== undefined && paymentLink !== null) {
             openPopup({popupName: 'qrPayment', paymentLink: paymentLink, order: cart});
         }
+        dispatch(resetPaymentLink());
     }, [paymentLink]);
 
     // const initSocketListener = () => {

@@ -129,9 +129,6 @@ const CartDrawerPopup = ({isVisible}) => {
 
     if (!isVisible) return null;
 
-    useEffect(() => {
-        console.log('cartDrawerPopup');
-    }, [cartData]);
 
     return (
         <div onClick={closePopup}>
@@ -247,7 +244,7 @@ const CartDrawerPopup = ({isVisible}) => {
                                                     <div className="flex gap-4 h-full rounded-lg">
                                                         <div className="w-[12%]">
                                                             <img
-                                                                src={item.image || '/build/assets/Product/empty-image.png'}
+                                                                src={item.image || '/storage/build/assets/Product/empty-image.png'}
                                                                 alt="Product"
                                                                 className="w-full shadow-lg rounded-lg aspect-square"/>
                                                         </div>

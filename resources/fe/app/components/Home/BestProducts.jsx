@@ -47,7 +47,7 @@ const BestProducts = () => {
     }, [imageList]);
 
     return (
-        <section className="max-w-7xl mx-auto mt-5 rounded-2xl bg-cover bg-center">
+        <section className="max-w-7xl mx-auto mt-5 rounded-2xl bg-cover bg-center mb-10">
             {/* 🔹 Beautiful Section Title */}
             <div className="container mx-auto px-4">
                 {products?.length === 0 ? <ProductsCardLoading/> : (
@@ -128,16 +128,16 @@ const BestProducts = () => {
                         </div>
                     </div>
                 )}
-                {hasMore && (
-                    <div className="flex justify-center items-center mt-6">
-                        <ButtonElement
-                            style="btn bg-red-500 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-80 transition-all duration-300"
-                            loading={loading}
-                            action={loadMoreProducts}
-                            title="More Products"
-                        />
-                    </div>
-                )}
+                {/*{hasMore && (*/}
+                {/*    <div className="flex justify-center items-center mt-6">*/}
+                {/*        <ButtonElement*/}
+                {/*            style="btn bg-red-500 text-white font-semibold py-3 px-6 rounded-lg hover:opacity-80 transition-all duration-300"*/}
+                {/*            loading={loading}*/}
+                {/*            action={loadMoreProducts}*/}
+                {/*            title="More Products"*/}
+                {/*        />*/}
+                {/*    </div>*/}
+                {/*)}*/}
             </div>
         </section>
     );

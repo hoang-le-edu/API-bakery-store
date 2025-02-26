@@ -88,14 +88,6 @@ export const getRefreshToken = () => async (dispatch) => {
     }
 };
 
-export const userLogout = () => async (dispatch) => {
-    dispatch({type: LOGOUT_PROCESS});
-    Cookies.remove("accessToken");
-    Cookies.remove("refreshToken");
-    Cookies.remove("role");
-    dispatch({type: LOGOUT_SUCCESS});
-};
-
 export const resetStatus = () => async (dispatch) => {
     dispatch({type: RESET_STATUS});
 };
@@ -118,26 +110,15 @@ export const userRegister = (input, firebase_uid) => async (dispatch) => {
 
         dispatch({type: REGISTER_SUCCESS});
     } catch (error) {
-        dispatch({type: REGISTER_FAIL, payload: error.message});
-    }
-}
+        let errorMessage = "Something went wrong!";
 
-export const adminLogin = (input) => async (dispatch) => {
-    try {
-        dispatch({type: ADMIN_LOGIN_PROCESS});
+        if (error.response && error.response.data) {
+            errorMessage = error.response.data.message || errorMessage;
+        }
 
-        const {data} = await connectApi.get("/api/admin/getCustomToken", {
-            params: {
-                firebase_uid: input.firebase_uid,
-            },
-        });
+        dispatch({type: REGISTER_FAIL, payload: error.errorMessage});
 
-        console.log('customToken', data);
-
-        dispatch({type: ADMIN_LOGIN_SUCCESS, payload: response.data});
-    } catch (error) {
-        dispatch({type: ADMIN_LOGIN_FAIL, payload: error.message});
-        console.log('error dispatch', error.message);
+        throw new Error(errorMessage);
     }
 }
 

@@ -16,7 +16,6 @@ const SearchInputElement = () => {
     const [currentPopup, setCurrentPopup] = useState(null);
     const selectedProduct = useSelector(state => state.product.product);
     const inputContainerRef = useRef(null);
-
     const {openPopup, closePopup} = usePopup();
     const {t} = useTranslation();
 
@@ -53,11 +52,11 @@ const SearchInputElement = () => {
         []
     );
 
-    // const handleSearchEnter = () => {
-    //     navigate(`/menu/${searchParams}`);
-    //
-    //     // chuyen sang trang menu
-    // };
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault(); // Prevents default action
+        }
+    };
 
     useEffect(() => {
         if (searchParams) {
@@ -80,6 +79,7 @@ const SearchInputElement = () => {
                     placeholder={t("HEADER.SEARCH_FOR_PRODUCTS")}
                     value={searchParams}
                     onChange={handleInput}
+                    onKeyDown={handleKeyDown}
                     required
                 />
                 {/*<MdSearch className="absolute right-5 cursor-pointer" />*/}
