@@ -14,8 +14,8 @@ processing, shopping cart, and secure payment.
 <details>
   <summary><strong>System Features:</strong> Login with username and password, Login with Google, Logout, Register user, Authorization.</summary>
     
-<img src="/public/storage/readme/login.png" alt="Login Image" title="Login" width="600px">
-<img src="/public/storage/readme/register.png" alt="Register Image" title="Login" width="600px">
+<img src="/readme/login.png" alt="Login Image" title="Login" width="600px">
+<img src="/readme/register.png" alt="Register Image" title="Login" width="600px">
 
 
 </details>
@@ -25,31 +25,31 @@ processing, shopping cart, and secure payment.
 - **Customer**
   <details>
     <summary><strong>Carts: </strong> Create new carts, Add products to carts, Edit carts, Pay via bank account</summary>
-    <img src="/public/storage/readme/menu.png" alt="Menu Image" title="Menu" width="600px">
-  <img src="/public/storage/readme/add_to_cart.png" alt="Add product to carts Image" title="Add product to carts" width="600px">
-  <img src="/public/storage/readme/select_cart.png" alt="Select carts Image" title="Select carts" width="600px">
-  <img src="/public/storage/readme/edit_cart.png" alt="Edit cart Image" title="Edit cart" width="600px">
-  <img src="/public/storage/readme/payment_detail.png" alt="Payment Detail Image" title="Payment Detail" width="600px">
-  <img src="/public/storage/readme/qr.png" alt="QR Image" title="QR" width="600px">
+    <img src="/readme/menu.png" alt="Menu Image" title="Menu" width="600px">
+  <img src="/readme/add_to_cart.png" alt="Add product to carts Image" title="Add product to carts" width="600px">
+  <img src="/readme/select_cart.png" alt="Select carts Image" title="Select carts" width="600px">
+  <img src="/readme/edit_cart.png" alt="Edit cart Image" title="Edit cart" width="600px">
+  <img src="/readme/payment_detail.png" alt="Payment Detail Image" title="Payment Detail" width="600px">
+  <img src="/readme/qr.png" alt="QR Image" title="QR" width="600px">
   </details>
 
     <details>
     <summary><strong>Orders: </strong> Track orders, Cancel orders, Check orders history</summary>
-    <img src="/public/storage/readme/order_history.png" alt="Order History Image" title="Order History">
+    <img src="/readme/order_history.png" alt="Order History Image" title="Order History">
   </details>
 
 - **Admin:**
   <details>
     <summary><strong>CRUD Products </strong></summary>
-    <img src="/public/storage/readme/product_list.png" alt="Product List Image" title="Product List" width="600px">
-    <img src="/public/storage/readme/product_create.png" alt="Create Product Image" title="Create Product" width="600px">
-    <img src="/public/storage/readme/product_update.png" alt="Update Product Image" title="Update Product" width="600px">
+    <img src="/readme/product_list.png" alt="Product List Image" title="Product List" width="600px">
+    <img src="/readme/product_create.png" alt="Create Product Image" title="Create Product" width="600px">
+    <img src="/readme/product_update.png" alt="Update Product Image" title="Update Product" width="600px">
   </details>
   <details>
     <summary><strong>CRUD Orders </strong></summary>
-    <img src="/public/storage/readme/order_list.png" alt="Order List Image" title="Order List" width="600px">
-    <img src="/public/storage/readme/order_create.png" alt="Create Order Image" title="Create Order" width="600px">
-    <img src="/public/storage/readme/order_update.png" alt="Update Order Image" title="Update Order" width="600px">
+    <img src="/readme/order_list.png" alt="Order List Image" title="Order List" width="600px">
+    <img src="/readme/order_create.png" alt="Create Order Image" title="Create Order" width="600px">
+    <img src="/readme/order_update.png" alt="Update Order Image" title="Update Order" width="600px">
   </details>
 
 ## 🛠️ Tech Stack
