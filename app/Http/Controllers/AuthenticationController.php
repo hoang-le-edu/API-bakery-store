@@ -494,11 +494,15 @@ class AuthenticationController extends BaseController
         $input['password'] = bcrypt($input['password']);
         $input['is_admin'] = 1;
 
-        $user = User::create($input);
+        $user = User::where('firebase_uid', $input['firebase_uid'])->first();
 
-        $success['token'] = $user->createToken('MyApp')->plainTextToken;
-        $success['name'] = $user->name;
+        if($user) {
+            $user->update($input);
+        }
+        else {
+            $user = User::create($input);
+        }
 
-        return $this->sendResponse($success, 'Admin created successfully.');
+        return $this->sendResponse($user, 'Admin created successfully.');
     }
 }

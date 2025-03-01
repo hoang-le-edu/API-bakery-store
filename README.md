@@ -1,66 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# BEPMETAY E-COMMERCE PLATFORM
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+(Personal Project)
 
-## About Laravel
+## Description
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Developed a web-based system for selling jelly desserts online, featuring product management, order
+processing, shopping cart, and secure payment.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🌐 Product: [bepmetay.id.vn](https://bepmetay.id.vn/)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Features
 
-## Learning Laravel
+<details>
+  <summary><strong>System Features:</strong> Login with username and password, Login with Google, Logout, Register user, Authorization.</summary>
+    
+<img src="/public/storage/readme/login.png" alt="Login Image" title="Login" width="600px">
+<img src="/public/storage/readme/register.png" alt="Register Image" title="Login" width="600px">
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+</details>
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**End User:**
 
-## Laravel Sponsors
+- **Customer**
+  <details>
+    <summary><strong>Carts: </strong> Create new carts, Add products to carts, Edit carts, Pay via bank account</summary>
+    <img src="/public/storage/readme/menu.png" alt="Menu Image" title="Menu" width="600px">
+  <img src="/public/storage/readme/add_to_cart.png" alt="Add product to carts Image" title="Add product to carts" width="600px">
+  <img src="/public/storage/readme/select_cart.png" alt="Select carts Image" title="Select carts" width="600px">
+  <img src="/public/storage/readme/edit_cart.png" alt="Edit cart Image" title="Edit cart" width="600px">
+  <img src="/public/storage/readme/payment_detail.png" alt="Payment Detail Image" title="Payment Detail" width="600px">
+  <img src="/public/storage/readme/qr.png" alt="QR Image" title="QR" width="600px">
+  </details>
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    <details>
+    <summary><strong>Orders: </strong> Track orders, Cancel orders, Check orders history</summary>
+    <img src="/public/storage/readme/order_history.png" alt="Order History Image" title="Order History">
+  </details>
 
-### Premium Partners
+- **Admin:**
+  <details>
+    <summary><strong>CRUD Products </strong></summary>
+    <img src="/public/storage/readme/product_list.png" alt="Product List Image" title="Product List" width="600px">
+    <img src="/public/storage/readme/product_create.png" alt="Create Product Image" title="Create Product" width="600px">
+    <img src="/public/storage/readme/product_update.png" alt="Update Product Image" title="Update Product" width="600px">
+  </details>
+  <details>
+    <summary><strong>CRUD Orders </strong></summary>
+    <img src="/public/storage/readme/order_list.png" alt="Order List Image" title="Order List" width="600px">
+    <img src="/public/storage/readme/order_create.png" alt="Create Order Image" title="Create Order" width="600px">
+    <img src="/public/storage/readme/order_update.png" alt="Update Order Image" title="Update Order" width="600px">
+  </details>
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## 🛠️ Tech Stack
 
-## Contributing
+- <b>Framework:</b> Laravel 10
+- <b>Database:</b> MySQL
+- <b>Authentication:</b> Firebase
+- <b>Library:</b> ReactJS
+- <b>State Management:</b> : Redux Toolkit (RTK)
+- <b>Styling:</b> Tailwind CSS
+- <b>Language:</b> PHP, JavaScript
+- <b>Tools:</b> Composer, npm, Vite, Git, Postman,
+- <b>API Integration:</b> PayOS
+- <b>Deployment:</b> VPS, Nginx, SSL, Cloudflare
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🚀 Installation
 
-## Code of Conduct
+### Prerequisites
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- PHP 8.2 (XAMPP)
+- Composer
+- Node.js and npm
 
-## Security Vulnerabilities
+### Steps
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/LeMinhHoang1204/be_bakery_store.git
+    ```
+2. Install PHP dependencies:
+    ```sh
+    composer install
+    ```
+3. Install JavaScript dependencies:
+    ```sh
+    npm install
+    ```
+4. Start project:
+    ```sh
+    php artisan serve
+    ```
+    ```sh
+   npm run dev
+    ```
 
-## License
+## 💌 Contact Information
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Owner: Le Minh Hoang  
+Email: leminhhoang.working@gmail.com
