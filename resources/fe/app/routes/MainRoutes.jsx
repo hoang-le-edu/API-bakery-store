@@ -33,7 +33,7 @@ function MainContent() {
                     {/*Not and Auth*/}
                     <Route path="/" element={<HomePage/>}/>
 
-                    <Route path="/about" element={<AboutPage/>}/>
+                    {/*<Route path="/about" element={<AboutPage/>}/>*/}
 
                     {/*<Route path="/verify-otp" element={<VerifyPage />}/>*/}
 
