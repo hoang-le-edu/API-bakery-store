@@ -1,5 +1,6 @@
 import React from "react";
 import {Link} from "react-router-dom";
+import pageNotFound from '../../assets/page_not_found.png';
 
 const PageNotFound = () => {
     return (
@@ -13,10 +14,10 @@ const PageNotFound = () => {
                 </div>
                 <div className="flex flex-col items-center mb-10">
                     <div>
-                        <img className="h-[375px]" src={PageNotFound} alt=""/>
+                        <img className="h-[375px]" src={pageNotFound} alt=""/>
                     </div>
                     <div>
-                        <button className="btn w-full bg-tertiary">
+                        <button className="btn w-full bg-blue-400 hover:bg-primary">
                             <Link to="/">Back To Home</Link>
                         </button>
                     </div>

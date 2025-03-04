@@ -26,7 +26,7 @@ const AdminAuth = ({children}) => {
     if (userLoggedIn && isPremiumUser) {
         return children;
     } else {
-        return <Navigate to="/login"/>;
+        return <Navigate to="/"/>;
     }
 }
 

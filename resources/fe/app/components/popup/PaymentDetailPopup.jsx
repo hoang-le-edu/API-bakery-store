@@ -151,10 +151,20 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
     const proceedOrder = async () => {
         try {
             setIsProcessing(true);
+
+            const selectedProvince = provinces?.find(p => p.ProvinceID.toString() === form.province.toString());
+            const provinceName = selectedProvince ? selectedProvince.ProvinceName : '';
+
+            const selectedDistrict = districts?.find(d => d.DistrictID.toString() === form.district.toString());
+            const districtName = selectedDistrict ? selectedDistrict.DistrictName : '';
+
+            const selectedWard = wards?.find(w => w.WardCode.toString() === form.ward.toString());
+            const wardName = selectedWard ? selectedWard.WardName : '';
+
             const orderData = {
                 order_id: cart.order_id,
                 receiver_name: form.receiverName,
-                receiver_address: `${form.street}, ${form.ward}, ${form.district}, ${form.province}`,
+                receiver_address: `${form.street}, ${wardName}, ${districtName}, ${provinceName}`,
                 payment_method: form.paymentMethod,
                 // branch: form.branch,
                 voucher: form.voucher,
@@ -329,7 +339,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_PROVINCE')}</option>
                                                         {provinces?.map((province) => (
                                                             <option key={province.ProvinceID}
-                                                                    value={province.ProvinceID}>
+                                                                    value={province.ProvinceID}
+                                                                    data-name={province.ProvinceName}>
                                                                 {province.ProvinceName}
                                                             </option>
                                                         ))}
@@ -350,7 +361,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_DISTRICT')}</option>
                                                         {districts?.filter(d => d.ProvinceID.toString() === form.province.toString()).map((district) => (
                                                             <option key={district.DistrictID}
-                                                                    value={district.DistrictID}>
+                                                                    value={district.DistrictID}
+                                                                    data-name={district.DistrictName}>
                                                                 {district.DistrictName}
                                                             </option>
                                                         ))}
@@ -369,7 +381,9 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                         <option
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_WARD')}</option>
                                                         {wards?.map((ward) => (
-                                                            <option key={ward.WardCode} value={ward.WardCode}>
+                                                            <option key={ward.WardCode}
+                                                                    value={ward.WardCode}
+                                                                    data-name={ward.WardName}>
                                                                 {ward.WardName}
                                                             </option>
                                                         ))}

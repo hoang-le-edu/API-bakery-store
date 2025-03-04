@@ -1,8 +1,7 @@
 import React, {useRef, useState} from 'react';
 import SpinnerLoading from '../../../components/loading/SpinnerLoading.jsx';
-import {doSignInWithCustomToken, doSignInWithEmailAndPassword} from "../../../modules/firebase/auth.js";
+import {doSignInWithEmailAndPassword} from "../../../modules/firebase/auth.js";
 import {notify} from "../../../layouts/Notification/notify.jsx";
-import axios from 'axios';
 import {useNavigate} from "react-router-dom";
 
 const Login = () => {
@@ -24,15 +23,8 @@ const Login = () => {
                 // Sign in with email and password to get firebase_uid
                 const {user} = await doSignInWithEmailAndPassword(inputRef.current.email, inputRef.current.password);
 
-                // get custom token from server by firebase_uid
-                const {data} = await axios.post('/api/auth/getCustomToken', {firebase_uid: user.uid});
-
-                if (data) {
-                    await doSignInWithCustomToken(data.custom_token);
-                }
-
                 setIsSigningIn(false);
-                navigate('/admin/products');
+                navigate('/admin/orders');
                 notify('success', 'Login successfully');
             } catch (error) {
                 setIsSigningIn(false);

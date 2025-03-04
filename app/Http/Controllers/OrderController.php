@@ -24,9 +24,66 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['customers', 'creator'])->get();
-        return response()->json(['message' => 'Orders fetched successfully.', 'data' => $orders]);
+        $orders = Order::with([
+            'orderDetails' => function ($query) {
+                $query->whereNull('parent_id') // Filter where parent_id is NULL
+                ->with('toppings.product'); // Include related toppings and products
+            }
+        ])->get();
+
+        $return_data = [];
+        foreach ($orders as $order) {
+            $data = [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'date_created' => $order->created_at,
+                'host_id' => $order->host_id,
+                'payment_method' => $order->payment_method,
+                'payment_status' => $order->payment_status,
+                'receiver_name' => $order->receiver_name,
+                'receiver_address' => $order->receiver_address,
+                'receiver_phone' => $order->receiver_phone,
+                'order_status' => $order->order_status,
+                'count_product' => $order->orderDetails->count(),
+                'order_total' => $order->order_total,
+                'order_date' => $order->updated_at,
+                'rate' => $order->rate,
+                'feedback' => $order->customer_feedback,
+                'note' => $order->note,
+                'created_at' => $order->created_at,
+                'source' => $order->source,
+            ];
+            foreach ($order->orderDetails as $orderDetail) {
+                $data['order_detail'][] = [
+                    'id' => $orderDetail->id,
+                    'order_detail_number' => $orderDetail->order_detail_number,
+                    'product_id' => $orderDetail->product->id,
+                    'product_name' => $orderDetail->product->name,
+                    'product_price' => $orderDetail->product->price,
+                    'size' => $orderDetail->size,
+                    'quantity' => $orderDetail->quantity,
+                    'note' => $orderDetail->note,
+                    'total_price' => $orderDetail->total_price,
+                    'count_topping' => $orderDetail->toppings->count(),
+                    'toppings' => $orderDetail->toppings->map(function ($topping) {
+                        return [
+                            'id' => $topping->id,
+                            'topping_id' => $topping->product->id,
+                            'name' => $topping->product->name,
+                            'price' => $topping->total_price,
+                        ];
+                    }),
+                ];
+            }
+            $return_data[] = $data;
+        }
+
+        return response()->json([
+            'message' => 'Orders fetched successfully.',
+            'data' => $return_data,
+        ]);
     }
+
     public function deleteCart($orderId)
     {
         try {

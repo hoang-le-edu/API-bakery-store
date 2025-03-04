@@ -25,8 +25,8 @@ const Header = () => {
 
     const {currentPopup, openPopup, closePopup, switchPopup} = usePopup();
 
+
     // wait data from switch popup detailProduct
-    const selectedProduct = useSelector(state => state.product.product);
 
     const {quantity: cartQuantity} = useSelector(state => state.cart);
 
@@ -48,7 +48,7 @@ const Header = () => {
         if (userLoggedIn && !isPremiumUser) {
             dispatch(fetchCart());
         }
-    }, [dispatch]);
+        }, [dispatch]);
 
     return (
         <header className="bg-white fixed top-0 w-full z-10 px-2 border-b">
@@ -69,7 +69,7 @@ const Header = () => {
                     </div>
 
                     {/* Search bar */}
-                    <SearchInputElement/>
+                    {!isPremiumUser && <SearchInputElement/>}
 
                     {/* Navigation */}
                     <div className="inline-flex justify-center items-center space-x-4 px-2 w-auto min-w-max">

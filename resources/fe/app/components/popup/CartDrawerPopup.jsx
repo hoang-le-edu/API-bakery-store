@@ -52,10 +52,12 @@ const CartDrawerPopup = ({isVisible}) => {
         if (confirm('Are you sure you want to delete this product?')) {
             try {
                 dispatch(deleteProductInCart(cartId, orderDetailId));
-                fetchData();
                 notify('success', 'Delete product successfully!');
             } catch (e) {
                 notify('error', 'Delete product failed!');
+            }
+            finally {
+                fetchData();
             }
         }
     };
@@ -78,10 +80,13 @@ const CartDrawerPopup = ({isVisible}) => {
         if (confirm('Are you sure you want to delete this topping?')) {
             try {
                 dispatch(deleteToppingInCart(cartId, orderDetailId, toppingId));
-                fetchData();
+                // fetchData();
                 notify('success', 'Delete topping successfully!');
             } catch (e) {
                 notify('error', 'Delete topping failed!');
+            }
+            finally {
+                fetchData();
             }
         }
     };

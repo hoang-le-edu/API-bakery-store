@@ -5,17 +5,22 @@ import {doSignOut} from "../../modules/firebase/auth.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {useTranslation} from "react-i18next";
 import {notify} from "../Notification/notify.jsx";
+import {useAuth} from "../../hooks/contexts/authContext/index.jsx";
 
 const UserSetting = ({isVisible}) => {
     const navigate = useNavigate();
     const popupRef = useRef(null);
     const {closePopup} = usePopup();
     const {t, i18n} = useTranslation();
+    const {isPremiumUser} = useAuth();
 
     const handleLogout = async () => {
+        if (isPremiumUser)
+            navigate("/admin-login");
+        else
+            navigate("/");
         await doSignOut();
         closePopup();
-        navigate("/");
     };
 
     useEffect(() => {

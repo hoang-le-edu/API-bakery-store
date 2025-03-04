@@ -22,10 +22,12 @@ const NavMenuElement = ({handleNavMenu, openMenu, userLoggedIn, switchPopup}) =>
     const {isPremiumUser} = useAuth();
 
     const navMenuName = [
-        {name: t('HEADER.HOME'), path: "/", visible: true},
-        {name: t('HEADER.MENU'), path: "/menu", visible: true},
+        {name: t('HEADER.HOME'), path: "/", visible: !isPremiumUser},
+        {name: t('HEADER.MENU'), path: "/menu", visible: !isPremiumUser},
         {name: t('HEADER.LOGIN'), visible: !userLoggedIn && !isPremiumUser, onClick: handleLoginClick}, // Show Signin only if user array is empty
         {name: t('HEADER.ORDER'), path: "/orders", visible: userLoggedIn && !isPremiumUser},
+        {name: 'Sản phẩm', path: "/admin/products", visible: userLoggedIn && isPremiumUser},
+        {name: 'Đơn hàng', path: "/admin/orders", visible: userLoggedIn && isPremiumUser},
     ];
 
     const handleMobileNavMenu = () => {

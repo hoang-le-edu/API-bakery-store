@@ -25,11 +25,13 @@ const OrderCRUD = () => {
         id: '',
         order_number: '',
         receiver_name: '',
+        receiver_phone: '',
         receiver_address: '',
         payment_method: 'Banking',
         payment_status: 'pending',
         order_status: 'Wait for Approval',
         order_total: 0,
+        order_detail: [],
         // team_id: '',
     });
 
@@ -116,9 +118,11 @@ const OrderCRUD = () => {
             order_number: order.order_number,
             receiver_name: order.receiver_name,
             receiver_address: order.receiver_address,
+            receiver_phone: order.receiver_phone,
             payment_method: order.payment_method,
             order_status: order.order_status,
             order_total: order.order_total,
+            order_detail: order.order_detail,
             team_id: order.team_id,
         });
         if (updateDrawerInstance) {
@@ -156,6 +160,7 @@ const OrderCRUD = () => {
             payment_method: 'Banking',
             order_status: 'Wait for Approval',
             order_total: 0,
+            'order_detail': [],
             team_id: '',
         });
     };
@@ -438,7 +443,6 @@ const OrderCRUD = () => {
                     </div>
                 </div>
             </section>
-            );
 
             {/* Create Order Modal */}
             <div id="create-order-modal" tabIndex="-1" aria-hidden="true"
@@ -616,6 +620,23 @@ const OrderCRUD = () => {
                                 />
                             </div>
                             <div>
+                                <label htmlFor="receiver_phone"
+                                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    Receiver phone
+                                </label>
+                                <input
+                                    name="receiver_phone"
+                                    value={formEdit.receiver_phone}
+                                    onChange={handleEditChange}
+                                    type="text"
+                                    id="receiver_name"
+                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                    placeholder="Receiver Phone"
+                                    required
+                                />
+                            </div>
+
+                            <div>
                                 <label htmlFor="receiver_address"
                                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                     Receiver Address
@@ -702,6 +723,41 @@ const OrderCRUD = () => {
                                     required
                                 />
                             </div>
+
+                            <div>
+                                <label htmlFor="order_details"
+                                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Order
+                                    Details</label>
+                                {formEdit.order_detail?.map((detail) => (
+                                    <div key={detail.id}
+                                         className="mt-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-700">
+                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Sản
+                                            phẩm: {detail.product_name}</h3>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300">Kích
+                                            thước: {detail.size}</p>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300">Số
+                                            lượng: {detail.quantity}</p>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300">Ghi
+                                            chú: {detail.note}</p>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300">Tổng sản
+                                            phẩm: {formatVietnameseCurrency(detail.total_price)}</p>
+                                        {detail.toppings.length > 0 && (
+                                            <div className="mt-2">
+                                                <h4 className="text-md font-medium text-gray-900 dark:text-white">Toppings:</h4>
+                                                <ul className="list-disc list-inside">
+                                                    {detail.toppings.map((topping) => (
+                                                        <li key={topping.id}
+                                                            className="text-sm text-gray-700 dark:text-gray-300">
+                                                            {topping.name} - {formatVietnameseCurrency(topping.price)}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
                             {/*<div>*/}
                             {/*    <label htmlFor="team_id" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">*/}
                             {/*        Branch*/}

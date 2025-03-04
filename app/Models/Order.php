@@ -54,14 +54,17 @@ class Order extends Model
             ->withPivot('id') // Include the pivot table's ID
             ->withTimestamps();
     }
+
     public function users()
     {
         return $this->belongsTo(User::class);
     }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
     public function team()
     {
         return $this->belongsTo(Team::class); // Singular: "team"
@@ -70,4 +73,18 @@ class Order extends Model
     public function vouchers() {
         return $this->belongsToMany(Voucher::class, 'order_voucher');
     }
+
+
+//    admin get orders
+    public function customerOrders()
+    {
+        return $this->hasMany(CustomerOrder::class, 'order_id');
+    }
+
+    public function orderDetails()
+    {
+        return $this->hasManyThrough(OrderDetail::class, CustomerOrder::class, 'order_id', 'customer_order_id');
+    }
+
+
 }
