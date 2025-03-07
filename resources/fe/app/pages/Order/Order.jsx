@@ -26,11 +26,6 @@ const Order = () => {
         fetchOrders();
     }, []);
 
-    // cap nhat data sau khi fetch xong
-    useEffect(() => {
-        console.log('newOrders', newOrders);
-    }, [newOrders]);
-
     const fetchOrders = useCallback(
         debounce(async () => {
             if (loading) return;

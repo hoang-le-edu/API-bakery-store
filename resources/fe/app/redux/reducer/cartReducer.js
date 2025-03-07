@@ -16,7 +16,7 @@ const loadCartFromLocalStorage = () => {
 
 const cartState = {
     // cart: loadCartFromLocalStorage(),
-    cartData: null,
+    cartData: [],
     loading: false,
     success: false,
     fail: false,
@@ -35,7 +35,8 @@ export const cartReducer = (state = cartState, action) => {
             return {
                 ...state,
                 cartData: action.payload.data,
-                quantity: action.payload.data?.length,
+                userInfo: action.payload.userInfo,
+                quantity: action.payload.data?.[0]?.count_product || 0,
                 loading: false,
             };
 
@@ -72,7 +73,7 @@ export const cartReducer = (state = cartState, action) => {
             return {
                 ...state,
                 cartData: action.payload.data,
-                quantity: action.payload.data?.length,
+                quantity: action.payload.data?.[0]?.count_product || 0,
                 success: true,
                 loading: false,
             };
@@ -83,8 +84,8 @@ export const cartReducer = (state = cartState, action) => {
 
             return {
                 ...state,
-                cartData: action.payload.data,
-                quantity: action.payload.data?.length,
+                cartData: [],
+                quantity: 0,
                 loading: false,
             };
         }

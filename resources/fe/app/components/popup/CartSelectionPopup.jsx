@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {formatVietnameseCurrency} from '../../locales/currencyFormat.js';
-import {addProductToCart} from "../../redux/action/cartAction.js";
+import {addProductToCart, fetchCart} from "../../redux/action/cartAction.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {formatDate} from "../../locales/dateFormat.js";
 import {notify} from "../../layouts/Notification/notify.jsx";
@@ -31,6 +31,7 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
                 setSelectedCarts(selectedCarts.filter(item => item.order_id !== 'new').concat(cart));
             }
         }
+        notify('info', 'Vui lòng xác nhận để thêm sản phẩm vào giỏ hàng');
     };
 
     const toggleToppings = (cartId) => {
@@ -47,20 +48,22 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
         const count = selectedCarts.length;
         const cartNames = selectedCarts.map(item => item.name).join(', ');
 
-        if (window.confirm(`Are you sure to add this product into ${count} carts: ${cartNames}`)) {
+        if (window.confirm(`Bạn có chắc chắn muốn thêm sản phẩm này vào các giỏ hàng: ${cartNames}?`)) {
             // turn on effect loading
             setLoading(true);
             if (selectedCarts.some(item => item.order_id === 'new')) {
-                dispatch(addProductToCart(product)).then(() => {
-                    notify('success', 'Add product to cart successfully');
+                dispatch(addProductToCart(product)).then(async () => {
+                    notify('success', 'Đã thêm sản phẩm vào giỏ hàng thành công');
                     resetState();
+                    await dispatch(fetchCart());
                     setLoading(false);
                     closePopup();
                 });
             } else {
-                dispatch(addProductToCart(product, selectedCarts.map(item => item.order_id))).then(() => {
-                    notify('success', 'Added product to cart successfully');
+                dispatch(addProductToCart(product, selectedCarts.map(item => item.order_id))).then(async () => {
+                    notify('success', 'Đã thêm sản phẩm vào giỏ hàng thành công');
                     resetState();
+                    await dispatch(fetchCart());
                     // turn off effect loading
                     setLoading(false);
                     closePopup();
@@ -88,9 +91,14 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
                 </button>
             </div>
 
+
+
             {/* cart list */}
             <div className="details_topping flex flex-col max-h-[400px] overflow-y-auto scrollbar-thin p-2">
-
+                {/* note */}
+                <div className="mb-4">
+                    <p className="text-red text-sm">Bạn có thể Thêm sản phẩm vào nhiều giỏ hàng bên dưới hoặc Tạo giỏ hàng mới</p>
+                </div>
                 {/* available carts */}
                 {cartData.map(cart => (
                     <div key={cart.order_id} onClick={() => toggleSelectedCart(cart)}
@@ -99,8 +107,8 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
                             {/* name and created date */}
                             <div className="flex flex-col gap-2 w-2/3 ml-2">
                                 <p className="text-black font-bold">{cart.name}</p>
-                                <p className="text-[14px] leading-none text-gray-600">Created
-                                    date: {formatDate(cart.date_created)}</p>
+                                <p className="text-[14px] leading-none text-gray-600">
+                                    Ngày tạo: {formatDate(cart.date_created)}</p>
                             </div>
                             <button className="rounded-full bg-gray-100 hover:bg-gray-300 p-1 h-fit"
                                     onClick={(e) => {
@@ -143,7 +151,7 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
                      className={`flex flex-col justify-between border-b border-gray-300 py-3 m-1 shadow-lg rounded-lg p-2 relative cursor-pointer transition-all duration-200 ease-in-out ${isSelectedCart('new') ? 'bg-[#FBD3D6]' : 'bg-white'}`}>
                     <div className="flex justify-between">
                         <div className="flex flex-col gap-2 w-2/3 ml-2">
-                            <p className="text-black font-bold">Create New Cart</p>
+                            <p className="text-black font-bold">Tạo mới giỏ hàng</p>
                         </div>
                     </div>
                 </div>
@@ -153,12 +161,12 @@ const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
             <div className="filter_btn flex items-center justify-end mt-5">
                 <button onClick={closePopup}
                         className="w-full justify-center sm:w-auto text-md text-gray-500 inline-flex items-center bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 rounded-full border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900">
-                    Cancel
+                    Hủy
                 </button>
                 <button disabled={selectedCarts.length === 0} onClick={addProductToCarts}
                         className={`active_btn ml-2 bg-[#f26d78] text-white px-4 py-2 rounded-full font-semibold ${selectedCarts.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     {/*Confirm*/}
-                    {loading ? <SpinnerLoading/> : 'Confirm'}
+                    {loading ? <SpinnerLoading/> : 'Xác nhận'}
                 </button>
             </div>
         </div>

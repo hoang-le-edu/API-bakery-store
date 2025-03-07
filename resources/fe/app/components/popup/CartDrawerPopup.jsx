@@ -17,7 +17,7 @@ const CartDrawerPopup = ({isVisible}) => {
     const form = {cart_name: '', type: ''};
     const dispatch = useDispatch();
 
-    const {cartData, loading} = useSelector(state => state.cart);
+    const {cartData, loading, userInfo} = useSelector(state => state.cart);
 
     const {openPopup, closePopup} = usePopup();
     const {t} = useTranslation();
@@ -228,7 +228,7 @@ const CartDrawerPopup = ({isVisible}) => {
 
                                 {/*show payment popup each cart*/}
                                 {showPaymentDetail[index] &&
-                                    <PaymentDetailPopup cart={cart} isVisible={showPaymentDetail[index]} index={index}
+                                    <PaymentDetailPopup cart={cart} isVisible={showPaymentDetail[index]} index={index} userInfo={userInfo}
                                                         refetchData={fetchData}/>}
 
                                 {!showPaymentDetail[index] && (

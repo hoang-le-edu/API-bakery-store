@@ -12,6 +12,7 @@ import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import Marketing from "./models/Marketing.jsx";
 import {useTranslation} from "react-i18next";
 import {MdOutlineSort, MdSort} from "react-icons/md";
+import SpinnerLoading from "../../components/loading/SpinnerLoading.jsx";
 
 const Menu = () => {
     const dispatch = useDispatch();
@@ -263,29 +264,12 @@ const Menu = () => {
 
                 {/* Right section : products */}
                 <div className="col-span-12 lg:col-span-9 grid grid-cols-1 lg:grid-cols-1 gap-0 lg:gap-4 mb-4">
-                    {loading ? (
-                        [...Array(3)].map((_, n) => (
-                            <div key={n} className="mb-6">
-                                <div className="h-8 bg-gray-200 rounded w-1/3 ml-4 animate-pulse"></div>
-                                <div
-                                    className="col-span-12 lg:col-span-9 grid grid-cols-2 lg:grid-cols-3 gap-0 lg:gap-4 mt-4">
-                                    {[...Array(6)].map((_, m) => (
-                                        <div key={m} className="p-4">
-                                            <div
-                                                className="w-full bg-gray-200 rounded-lg aspect-square animate-pulse"></div>
-                                            <div className="product_content flex flex-row justify-between mt-4">
-                                                <div className="product_label w-full">
-                                                    <div
-                                                        className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
-                                                    <div
-                                                        className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
+                    {loading ? <SpinnerLoading/> : listProduct?.length === 0 ? (
+                        <div className="flex flex-col items-center w-full h-full">
+                            <img src="/storage/build/assets/no-data-found.png" alt="No data"
+                                 className="w-80 opacity-60"/>
+                            <span className="text-gray-500 mt-2">Danh mục này đang được cập nhật, đừng quên ghé thăm thường xuyên!</span>
+                        </div>
                     ) : (
                         listProduct?.map(category => (
                             <div key={category.category_id}>

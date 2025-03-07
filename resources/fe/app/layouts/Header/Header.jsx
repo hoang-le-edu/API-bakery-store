@@ -86,7 +86,7 @@ const Header = () => {
                             {!isPremiumUser &&
                                 <button className="relative" onClick={handleCartClick}>
                                     <BsCart3 className="text-lg lg:text-xl"/>
-                                    {cartQuantity > 0 && (
+                                    { userLoggedIn && (
                                         <span
                                             className="absolute -top-2 -right-3 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-[#f26d78] rounded-full">
                                                 {cartQuantity}
@@ -131,11 +131,11 @@ const Header = () => {
                                      registerData={currentPopup.registerData}/>}
 
             {/* Select available cart when user add product to cart */}
-            {currentPopup?.popupName === 'cartSelection' &&
-                <CartSelectionPopup isVisible={currentPopup?.popupName === 'cartSelection'}
-                                    cartData={currentPopup?.cartData}
-                                    product={currentPopup?.product}
-                                    resetState={currentPopup?.resetState}/>}
+            {/*{currentPopup?.popupName === 'cartSelection' &&*/}
+            {/*    <CartSelectionPopup isVisible={currentPopup?.popupName === 'cartSelection'}*/}
+            {/*                        cartData={currentPopup?.cartData}*/}
+            {/*                        product={currentPopup?.product}*/}
+            {/*                        resetState={currentPopup?.resetState}/>}*/}
 
             {/* cart drawer */}
             {currentPopup?.popupName === 'cartDrawer' &&

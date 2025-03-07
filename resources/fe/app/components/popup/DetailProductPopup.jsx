@@ -64,7 +64,7 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
         );
         setQuantity(1);
         setNote('');
-        await dispatch(resetCart());
+        // await dispatch(resetCart());
         setProduct({});
     }
 
@@ -104,62 +104,103 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
 
         // start loading
 
-        // get available carts
-        await dispatch(fetchCart());
+        // get available carts for feature: add to multiple carts
+        // khong can fetch do da fetch o Header - thoi ke
+        await dispatch(fetchCart()).then(() => {
+                const availableCart = cartData?.map(cart => cart.order_id) || [];
+                const newProduct = {
+                product_id: selectedProduct.id,
+                total_price: totalPrice,
+                size: selectedSize.name,
+                toppings_id: selectedToppings.filter(topping => topping.is_selected).map(topping => topping.id),
+                note: note,
+                quantity: quantity,
+            };
+
+            dispatch(addProductToCart(newProduct, availableCart)).then(async () => {
+                resetState();
+                await dispatch(fetchCart());
+                closePopup();
+                notify('success', 'Đã thêm sản phẩm vào giỏ hàng thành công');
+            });
+        });
     };
 
+
+    // useEffect(() => {
+    //     const availableCart = cartData?.[0]?.order_id;
+    //     return;
+    //     const newProduct = {
+    //         product_id: selectedProduct.id,
+    //         total_price: totalPrice,
+    //         size: selectedSize.name,
+    //         toppings_id: selectedToppings.filter(topping => topping.is_selected).map(topping => topping.id),
+    //         note: note,
+    //         quantity: quantity,
+    //     };
+    //
+    //     dispatch(addProductToCart(newProduct, availableCart)).then(async () => {
+    //         notify('success', 'Thêm sản phẩm vào giỏ hàng thành công');
+    //         resetState();
+    //         await dispatch(fetchCart());
+    //         closePopup();
+    //     });
+    // }, [cartData]);
+
+    // handle add to multiple carts
     // ngan chan render lan dau cho cartData
-    const isFirstRenderForListCart = useRef(true);
-
-    // dispatch xong fetchCart thi setProduct
-    useEffect(() => {
-        if (isFirstRenderForListCart.current) {
-            isFirstRenderForListCart.current = false;
-            return;
-        }
-        // khi resetState thi useEffect nay se chay, ngan chan no
-        if (!cartData) return;
-        const newProduct = {
-            product_id: selectedProduct.id,
-            total_price: totalPrice,
-            size: selectedSize.name,
-            toppings_id: selectedToppings.filter(topping => topping.is_selected).map(topping => topping.id),
-            note: note,
-            quantity: quantity,
-        };
-
-        setProduct(newProduct);
-    }, [cartData]);
-
-    // ngan chan render lan dau cho product
-    const isFirstRenderForProduct = useRef(true);
-
-    // setProduct xong thi addProductToCart
-    useEffect(() => {
-        if (isFirstRenderForProduct.current) {
-            isFirstRenderForProduct.current = false;
-            return;
-        }
-
-        // neu dang cap nhat thi khong add vao cart
-        if (isEdit) return;
-
-        // khi resetState thi useEffect nay se chay, ngan chan no
-        if (!product) return;
-
-        if (cartData && cartData.length === 0) {
-            dispatch(addProductToCart(product)).then(() => {
-                notify('success', 'Add product to cart successfully');
-                resetState();
-                closePopup();
-            });
-            // notify('success', 'Add product to cart successfully');
-            // resetState();
-            // closePopup();
-        } else {
-            openPopup({popupName: 'cartSelection', product: product, cartData: cartData, resetState: resetState});
-        }
-    }, [product]);
+    // const isFirstRenderForListCart = useRef(true);
+    //
+    // // dispatch xong fetchCart thi setProduct
+    // useEffect(() => {
+    //     if (isFirstRenderForListCart.current) {
+    //         isFirstRenderForListCart.current = false;
+    //         return;
+    //     }
+    //     // khi resetState thi useEffect nay se chay, ngan chan no
+    //     if (!cartData) return;
+    //     const newProduct = {
+    //         product_id: selectedProduct.id,
+    //         total_price: totalPrice,
+    //         size: selectedSize.name,
+    //         toppings_id: selectedToppings.filter(topping => topping.is_selected).map(topping => topping.id),
+    //         note: note,
+    //         quantity: quantity,
+    //     };
+    //
+    //     setProduct(newProduct);
+    // }, [cartData]);
+    //
+    // // ngan chan render lan dau cho product
+    // const isFirstRenderForProduct = useRef(true);
+    //
+    // // setProduct xong thi addProductToCart
+    // useEffect(() => {
+    //     if (isFirstRenderForProduct.current) {
+    //         isFirstRenderForProduct.current = false;
+    //         return;
+    //     }
+    //
+    //     // neu dang cap nhat thi khong add vao cart
+    //     if (isEdit) return;
+    //
+    //     // khi resetState thi useEffect nay se chay, ngan chan no
+    //     if (!product) return;
+    //
+    //     if (cartData && cartData.length === 0) {
+    //         dispatch(addProductToCart(product)).then(async () => {
+    //             notify('success', 'Add product to cart successfully');
+    //             resetState();
+    //             await dispatch(fetchCart());
+    //             closePopup();
+    //         });
+    //         // notify('success', 'Add product to cart successfully');
+    //         // resetState();
+    //         // closePopup();
+    //     } else {
+    //         openPopup({popupName: 'cartSelection', product: product, cartData: cartData, resetState: resetState});
+    //     }
+    // }, [product]);
 
     useEffect(() => {
         selectedToppingsKey.current += 1;
@@ -438,7 +479,10 @@ const DetailProductPopup = ({isVisible, isEdit, productDetailInCart}) => {
                     <div className="flex justify-end items-center space-x-4 h-[10%]">
                         <div>
                             <span className="mr-3">
-                                {t('DETAIL_PRODUCT.TOTAL')}: {totalPrice.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
+                                {t('DETAIL_PRODUCT.TOTAL')}: {totalPrice.toLocaleString('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND'
+                            })}
                             </span>
                             {!isEdit ? (
                                 <button onClick={addToCart}

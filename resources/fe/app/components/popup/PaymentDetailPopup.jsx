@@ -2,15 +2,18 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
 import connectApi from "../../../settings/ConnectApi.js";
-import {createPaymentLink, fetchDistricts, fetchWards, resetPaymentLink} from "../../redux/action/paymentAction.js";
+import {createPaymentLink, resetPaymentLink} from "../../redux/action/paymentAction.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 import {notify} from "../../layouts/Notification/notify.jsx";
 import {useNavigate} from "react-router-dom";
-import provinceJson from "../../locales/tinh_tp.json";
+import provinceJson from "../../locales/provinces.json";
 import {useTranslation} from "react-i18next";
+import districtJson from "../../locales/districts.json";
+import wardJson from "../../locales/wards.json";
+import {fetchCart} from "../../redux/action/cartAction.js";
 
-const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
+const PaymentDetailPopup = ({isVisible, index, cart, refetchData, userInfo}) => {
     const [socketStatus, setSocketStatus] = useState(false);
     const [voucherModalVisible, setVoucherModalVisible] = useState(false);
     const [dayAfterTomorrow, setDayAfterTomorrow] = useState('');
@@ -26,8 +29,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
         district: '',
         ward: '',
         street: '',
-        receiverName: '',
-        phoneNumber: '',
+        receiverName: userInfo?.full_name || '',
+        phoneNumber: userInfo?.phone_number || '',
         note: '',
         paymentMethod: 'Cash',
         branch: '',
@@ -41,9 +44,11 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
 
     // fetch provinces, districts, wards
     const dispatch = useDispatch();
-    const districts = useSelector(state => state.districts.districts);
-    const wards = useSelector(state => state.wards.wards);
+    // const districts = useSelector(state => state.districts.districts);
+    // const wards = useSelector(state => state.wards.wards);
     const [provinces, setProvinces] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [wards, setWards] = useState([]);
 
     const {openPopup, closePopup} = usePopup();
 
@@ -72,15 +77,23 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
 
     // fetch districts when province is selected
     useEffect(() => {
+        // if (form.province !== '') {
+        //     dispatch(fetchDistricts(form.province));
+        // }
         if (form.province !== '') {
-            dispatch(fetchDistricts(form.province));
+            const selectedDistricts = districtJson.filter(district => district.ProvinceID.toString() === form.province.toString());
+            setDistricts(selectedDistricts);
         }
     }, [form.province]);
 
     // fetch wards when district is selected
     useEffect(() => {
+        // if (form.district !== '') {
+        //     dispatch(fetchWards(form.district));
+        // }
         if (form.district !== '') {
-            dispatch(fetchWards(form.district));
+            const selectedWards = wardJson.filter(ward => ward.DistrictID.toString() === form.district.toString());
+            setWards(selectedWards);
         }
     }, [form.district]);
 
@@ -149,6 +162,12 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
     };
 
     const proceedOrder = async () => {
+
+        if (!form.province || !form.district || !form.ward || !form.street || !form.receiverName || !form.phoneNumber || !form.paymentMethod) {
+            notify('error', 'Vui lòng điền đầy đủ thông tin.');
+            return;
+        }
+
         try {
             setIsProcessing(true);
 
@@ -183,19 +202,19 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
             const response = await connectApi.post('/api/orders/proceed', orderData);
 
             if (response.status === 200) {
-                notify('success', 'Order proceeded successfully');
+                notify('success', 'Đơn hàng của bạn đã được đặt thành công!');
                 if (form.paymentMethod === 'Banking') {
                     setShowPaynowButton(true);
                 }
                 setShowSuccess(true);
                 setTimeout(() => setShowButtons(true), 1000);
             } else {
-                notify('error', 'An error occurred while proceeding with the order. Please try again.');
+                notify('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.');
             }
             setIsProcessing(false);
             // dispatch({ type: 'setCartCount', payload: store.customerInfo.count_cart - 1 });
         } catch (error) {
-            notify('error', 'An error occurred while proceeding with the order. Please try again.');
+            notify('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.');
             setIsProcessing(false);
         }
     };
@@ -214,7 +233,7 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
         try {
             dispatch(createPaymentLink(cart.order_id));
         } catch (error) {
-            notify('error', 'An error occurred while creating payment link. Please try again.');
+            notify('error', 'Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.');
         }
     };
 
@@ -225,42 +244,11 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
         dispatch(resetPaymentLink());
     }, [paymentLink]);
 
-    // const initSocketListener = () => {
-    //     const socketURL = "https://socket.dotb.cloud/";
-    //     socket = io.connect(socketURL, {path: "", transports: ["websocket"], reconnection: true});
-    //
-    //     socket.on('connect', () => {
-    //         console.log('Socket server is live!');
-    //         socket.emit('join', `triggerPaymentStatus/${cart.order_id}`);
-    //     });
-    //
-    //     socket.on('error', () => {
-    //         console.log('Cannot connect to socket server!');
-    //     });
-    //
-    //     socket.on('event-phenikaa', (msg) => {
-    //         console.log('Socket message:', msg);
-    //         if (msg.success) {
-    //             if (!socketStatus) {
-    //                 let message = 'Successfully pay for order ' + cart.name + ' with amount ' + formatVietnameseCurrency(cart.total_price);
-    //                 notify('success', message);
-    //                 closePopup();
-    //
-    //                 setShowPaynowButton(false);
-    //                 setSocketStatus(true);
-    //                 navigate('/order'); // Navigate to order page
-    //             }
-    //         } else {
-    //             notify('error', 'Payment failed. Please try again.');
-    //         }
-    //     });
-    // };
-
     const cleanupSocket = () => {
         if (socket) {
             socket.disconnect();
             socket = null;
-            console.log('Socket disconnected');
+            // console.log('Socket disconnected');
         }
     };
 
@@ -334,7 +322,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                         district: '',
                                                         ward: ''
                                                     })}
-                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                                            required>
                                                         <option
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_PROVINCE')}</option>
                                                         {provinces?.map((province) => (
@@ -356,7 +345,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                         district: e.target.value,
                                                         ward: ''
                                                     })}
-                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                                            required>
                                                         <option
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_DISTRICT')}</option>
                                                         {districts?.filter(d => d.ProvinceID.toString() === form.province.toString()).map((district) => (
@@ -377,7 +367,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                         className="block mb-2 text-sm font-medium text-gray-500 dark:text-white mt-2">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.WARD')}</label>
                                                     <select value={form.ward}
                                                             onChange={(e) => setForm({...form, ward: e.target.value})}
-                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                                            required>
                                                         <option
                                                             value="">{t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.SELECT_WARD')}</option>
                                                         {wards?.map((ward) => (
@@ -397,7 +388,8 @@ const PaymentDetailPopup = ({isVisible, index, cart, refetchData}) => {
                                                     <input type="text" value={form.street}
                                                            onChange={(e) => setForm({...form, street: e.target.value})}
                                                            className="bg-white border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                                           placeholder={t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.PLACEHOLDER_STREET')}/>
+                                                           placeholder={t('DETAIL_PAYMENT.DELIVERY_ADDRESSES.PLACEHOLDER_STREET')}
+                                                           required/>
                                                 </div>
                                             </div>
                                         </div>

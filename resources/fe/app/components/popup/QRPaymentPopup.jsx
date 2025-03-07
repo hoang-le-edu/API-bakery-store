@@ -6,6 +6,7 @@ import {notify} from "../../layouts/Notification/notify.jsx";
 import {useNavigate} from "react-router-dom";
 import {getAllOrders} from "../../redux/action/orderAction.js";
 import {useDispatch} from "react-redux";
+import {fetchCart} from "../../redux/action/cartAction.js";
 
 const QRPaymentPopup = ({isVisible, cart, paymentLink}) => {
 
@@ -40,8 +41,8 @@ const QRPaymentPopup = ({isVisible, cart, paymentLink}) => {
                 closePopup();
                 notify('success', message);
                 // setSocketStatus(true);
+                await dispatch(fetchCart());
                 await dispatch(getAllOrders());
-
                 navigate('/orders'); // Navigate to order page
                 // }
             } else {

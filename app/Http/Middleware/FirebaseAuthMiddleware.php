@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Auth;
@@ -32,6 +33,14 @@ class FirebaseAuthMiddleware
             $verifiedIdToken = $this->firebaseAuth->verifyIdToken($token);
             $request->attributes->set('firebaseUser', $verifiedIdToken->claims()->all());
 //            return \response()->json($request->attributes->get('firebaseUser'));
+            $firebaseUid = $verifiedIdToken->claims()->get('sub'); // Get Firebase UID
+
+            // Find or create a user in Laravel's users table
+            $user = User::where('firebase_uid', $firebaseUid)->first();
+            if($user){
+                auth()->login($user);
+            }
+
         } catch (RevokedIdToken $e) {
             return response()->json(['error' => 'Token revoked'], Response::HTTP_UNAUTHORIZED);
         } catch (\Exception $e) {

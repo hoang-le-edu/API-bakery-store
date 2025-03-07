@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreOrderRequest;
-use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Order;
@@ -11,11 +9,8 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\Team;
 use App\Models\User;
-use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Twilio\TwiML\Voice\Pay;
 
 class OrderController extends Controller
 {
@@ -633,6 +628,7 @@ class OrderController extends Controller
                 'customer_feedback' => '',
                 'order_total' => $validated['product']['total_price'],
                 'host_id' => $customer->id,
+                'created_by' => $user->id,
             ]);
             $order->customers()->attach($customer->id);
             $validated['order_ids'] = [$order->id];
@@ -916,7 +912,11 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Cart fetched successfully.',
-            'data' => $return_data
+            'data' => $return_data,
+            'userInfo' => [
+                'full_name' => $customer->full_name,
+                'phone_number' => $customer->phone_number,
+            ],
         ]);
     }
     public function updateProductInCart(Request $request)
