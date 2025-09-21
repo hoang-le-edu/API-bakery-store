@@ -49,18 +49,20 @@ jobs:
           set -e
           git push origin ci/promote --force-with-lease
 
-      - name: Open/Update PR to production (auto-delete ci branch on merge)
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: ci/promote
-          base: production
-          title: "Auto promote: development → production"
-          body: |
-            This PR was auto-created after a merge into `development`.
-            - Type: fast-forward promotion (no CI merge commits)
-            - Source: "${{ github.repository }}@${{ github.sha }}"
-          labels: auto-promote
-          draft: false
-          delete-branch: true
-          auto-merge: true
-          merge-method: merge
+      - name: Create/merge PR to production (ci/promote → production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          # Create PR if missing
+          if ! gh pr list --state open --base production --head ci/promote --json number -q '.[0].number' >/dev/null; then
+            gh pr create \
+              --base production \
+              --head ci/promote \
+              --title "Auto promote: development → production" \
+              --body "Auto-created after a merge into development." \
+              --label auto-promote
+          fi
+          # Get PR number, enable auto-merge (merge commit) or merge immediately if allowed
+          PR_NUMBER=$(gh pr list --state open --base production --head ci/promote --json number -q '.[0].number')
+          gh pr merge "$PR_NUMBER" --merge --auto
