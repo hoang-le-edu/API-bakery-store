@@ -1,0 +1,67 @@
+name: Auto Backup (open PR to production_backup)
+
+on:
+  push:
+    branches: [production]     # when production changes (after the promote PR is merged)
+
+concurrency:
+  group: backup-${{ github.ref }}  # avoid overlapping backups
+  cancel-in-progress: false
+
+jobs:
+  open-backup-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # push temp branch
+      pull-requests: write     # open/update PR
+
+    steps:
+      - name: Checkout production (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: production
+
+      - name: Set Git identity
+        run: |
+          git config user.name  "ci-promote-bot"
+          git config user.email "ci-promote-bot@users.noreply.github.com"
+
+      - name: Fetch all remote branches
+        run: |
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Prepare backup branch (base: production_backup → ff with production)
+        run: |
+          set -e
+          # Start from current production_backup; if it doesn't exist, start from production
+          if git show-ref --verify --quiet refs/remotes/origin/production_backup; then
+            git checkout -B production_backup origin/production_backup
+          else
+            git checkout -B production_backup origin/production
+          fi
+
+          # Create/update the fixed CI branch for backup
+          git checkout -B ci/backup
+
+          # Fast-forward CI branch with production
+          git merge --ff-only origin/production
+
+      - name: Push ci/backup (force-with-lease to update safely)
+        run: |
+          set -e
+          git push origin ci/backup --force-with-lease
+
+      - name: Open/Update PR to production_backup (auto-delete head branch on merge)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/backup                 # fixed CI branch to avoid branch clutter
+          base: production_backup
+          title: "Auto backup: production → production_backup"
+          body: |
+            This PR was auto-created after a push to `production`.
+            - Type: fast-forward sync to backup
+            - Source: `${{ github.repository }}@${{ github.sha }}`
+          labels: auto-backup
+          draft: false
+          delete-branch: true              # delete ci/backup after PR is merged
