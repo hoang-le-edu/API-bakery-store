@@ -1,0 +1,64 @@
+name: Auto Promote (open PR to production)
+
+on:
+  pull_request:
+    types: [closed]            # run when a PR to development is closed
+    branches: [development]    # base branch is development
+
+concurrency:
+  group: "promote-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  open-promote-pr:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # push ci branch
+      pull-requests: write     # open/update PR
+
+    steps:
+      - name: Checkout development (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Set Git identity
+        run: |
+          git config user.name "ci-promote-bot"
+          git config user.email "ci-promote-bot@users.noreply.github.com"
+
+      - name: Fetch all remote branches
+        run: |
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Prepare promote branch (base production; fast-forward with development)
+        run: |
+          set -e
+          if git show-ref --verify --quiet refs/remotes/origin/production; then
+            git checkout -B production origin/production
+          else
+            git checkout -B production origin/development
+          fi
+          git checkout -B ci/promote
+          git merge --ff-only origin/development
+
+      - name: Push ci/promote
+        run: |
+          set -e
+          git push origin ci/promote --force-with-lease
+
+      - name: Open/Update PR to production (auto-delete ci branch on merge)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/promote
+          base: production
+          title: "Auto promote: development → production"
+          body: |
+            This PR was auto-created after a merge into `development`.
+            - Type: fast-forward promotion (no CI merge commits)
+            - Source: "${{ github.repository }}@${{ github.sha }}"
+          labels: auto-promote
+          draft: false
+          delete-branch: true
