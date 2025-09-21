@@ -1,39 +1,58 @@
 name: Auto Backup (open PR to production_backup)
 
 on:
-  pull_request:
-    types: [closed]            # run when a PR to production is closed
-    branches: [production]     # base branch is production
+  workflow_run:
+    workflows: ["Auto Promote (open PR to production)"]  # must match the name of your promote workflow
+    types: [completed]
 
 concurrency:
-  group: "backup-${{ github.ref }}"
+  group: "backup-${{ github.run_id }}"
   cancel-in-progress: false
 
 jobs:
   open-backup-pr:
-    if: ${{ github.event.pull_request.merged == true }}
+    # run only if the promote workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write          # push ci branch
       pull-requests: write     # open/update PR
 
     steps:
-      - name: Checkout production (full history)
+      - name: Checkout default branch (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: production
 
       - name: Set Git identity
         run: |
-          git config user.name "ci-promote-bot"
+          git config user.name  "ci-promote-bot"
           git config user.email "ci-promote-bot@users.noreply.github.com"
 
       - name: Fetch all remote branches
         run: |
           git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      - name: Prepare backup branch (base production_backup; fast-forward with production)
+      - name: Skip if production already equals production_backup
+        id: need_backup
+        run: |
+          set -e
+          PROD=$(git rev-parse --verify "refs/remotes/origin/production" || echo "")
+          BACK=$(git rev-parse --verify "refs/remotes/origin/production_backup" || echo "")
+          if [ -z "$PROD" ]; then
+            echo "Production does not exist yet. Skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$BACK" ] && [ "$PROD" = "$BACK" ]; then
+            echo "No backup needed (production == production_backup)."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare backup branch (base: production_backup -> ff with production)
+        if: steps.need_backup.outputs.run == 'true'
         run: |
           set -e
           if git show-ref --verify --quiet refs/remotes/origin/production_backup; then
@@ -45,18 +64,20 @@ jobs:
           git merge --ff-only origin/production
 
       - name: Push ci/backup
+        if: steps.need_backup.outputs.run == 'true'
         run: |
           set -e
           git push origin ci/backup --force-with-lease
 
-      - name: Open/Update PR to production_backup (auto-delete ci branch on merge)
+      - name: Open/Update PR to production_backup (auto-delete head branch)
+        if: steps.need_backup.outputs.run == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ci/backup
           base: production_backup
           title: "Auto backup: production → production_backup"
           body: |
-            This PR was auto-created after a push to `production`.
+            This PR was auto-created after a successful promote workflow.
             - Type: fast-forward sync to backup
             - Source: "${{ github.repository }}@${{ github.sha }}"
           labels: auto-backup
