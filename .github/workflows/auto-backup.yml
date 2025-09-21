@@ -54,7 +54,7 @@ jobs:
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare backup branch (base: production_backup → fast-forward with production)
+      - name: Prepare backup branch (production_backup → fast-forward with production)
         if: ${{ steps.need_backup.outputs.run == 'true' }}
         run: |
           set -e
