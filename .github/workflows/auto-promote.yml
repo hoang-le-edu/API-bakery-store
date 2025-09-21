@@ -2,52 +2,65 @@ name: Auto Promote to Production
 
 on:
   pull_request:
-    types: [closed]         
-    branches:
-      - development        
+    types: [closed]          # run only when a PR targeting development is closed
+    branches: [development]  # base branch = development
+
+concurrency:
+  group: promote-${{ github.ref }}  # prevent overlapping promotes on the same ref
+  cancel-in-progress: false
 
 jobs:
   promote:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true   # proceed only if the PR was merged (not just closed)
     runs-on: ubuntu-latest
     permissions:
-      contents: write     
+      contents: write        # allow pushes and tags via GITHUB_TOKEN
 
     steps:
-      - name: Checkout full history
+      - name: Checkout development (full history)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: development
+          fetch-depth: 0      # need full history for accurate merges/tags
+          ref: development    # ensure we operate from the base branch
 
       - name: Set Git identity
         run: |
           git config user.name  "ci-promote-bot"
           git config user.email "ci-promote-bot@users.noreply.github.com"
 
-      - name: Fetch all branches
+      - name: Fetch all remote branches
         run: |
-          git fetch origin +development:development +production:production +production_backup:production_backup
+          # Update remote-tracking refs only (do NOT overwrite local branches)
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      # Merge development -> production (ff-only)
-      - name: Promote to production
+      # === Promote development -> production (fast-forward only) ===
+      - name: Promote to production (ff-only)
         run: |
           set -e
-          git checkout production
-          git reset --hard origin/production
+          # Create/reset local 'production' from its remote if exists; otherwise start from development
+          if git show-ref --verify --quiet refs/remotes/origin/production; then
+            git checkout -B production origin/production
+          else
+            git checkout -B production origin/development
+          fi
+          # Fast-forward merge ensures a clean linear history; job fails if not possible
           git merge --ff-only origin/development
           git push origin production
 
-      # Merge production -> production_backup (ff-only)
-      - name: Update production_backup
+      # === Keep production_backup aligned with production (fast-forward only) ===
+      - name: Update production_backup (ff-only)
         run: |
           set -e
-          git checkout production_backup
-          git reset --hard origin/production_backup
+          # Create/reset local 'production_backup' from its remote if exists; otherwise start from production
+          if git show-ref --verify --quiet refs/remotes/origin/production_backup; then
+            git checkout -B production_backup origin/production_backup
+          else
+            git checkout -B production_backup origin/production
+          fi
           git merge --ff-only origin/production
           git push origin production_backup
 
-      # Tag release
+      # (Optional) Create a release tag for traceability
       - name: Create release tag
         run: |
           set -e
