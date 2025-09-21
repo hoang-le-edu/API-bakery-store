@@ -72,17 +72,47 @@ jobs:
           set -e
           git push origin ci/backup --force-with-lease
 
-      - name: Open/Update PR to production_backup (auto-delete head branch)
+      - name: Create/merge PR to production_backup (ci/backup → production_backup)
         if: ${{ steps.need_backup.outputs.run == 'true' }}
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: ci/backup
-          base: production_backup
-          title: "Auto backup: production → production_backup"
-          body: |
-            This PR was auto-created after a successful promote workflow.
-            - Type: fast-forward sync to backup
-            - Source: "${{ github.repository }}@${{ github.sha }}"
-          labels: auto-backup
-          draft: false
-          delete-branch: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -e
+
+          # Skip if no differences between production_backup and ci/backup
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production_backup...ci/backup || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to backup (ci/backup vs origin/production_backup). Skipping."
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production_backup \
+            --head ci/backup \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base production_backup \
+              --head ci/backup \
+              --title "Auto backup: production → production_backup" \
+              --body "Auto-created after a successful promote workflow."
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production_backup \
+              --head ci/backup \
+              --json number --jq '.[0].number')
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/backup → production_backup"
+            exit 1
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"

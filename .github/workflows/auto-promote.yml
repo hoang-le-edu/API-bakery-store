@@ -1,0 +1,94 @@
+name: Auto Promote (open PR to production)
+
+on:
+  pull_request:
+    types: [closed]            # run when a PR to development is closed
+    branches: [development]    # base branch is development
+
+concurrency:
+  group: "promote-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  open-promote-pr:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # push ci branch
+      pull-requests: write     # open/update PR
+
+    steps:
+      - name: Checkout development (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Set Git identity
+        run: |
+          git config user.name "ci-promote-bot"
+          git config user.email "ci-promote-bot@users.noreply.github.com"
+
+      - name: Fetch all remote branches
+        run: |
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Prepare promote branch (base production; fast-forward with development)
+        run: |
+          set -e
+          if git show-ref --verify --quiet refs/remotes/origin/production; then
+            git checkout -B production origin/production
+          else
+            git checkout -B production origin/development
+          fi
+          git checkout -B ci/promote
+          git merge --ff-only origin/development
+
+      - name: Push ci/promote
+        run: |
+          set -e
+          git push origin ci/promote --force-with-lease
+
+      - name: Create/merge PR to production (ci/promote → production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -e
+
+          # Skip if no differences between production and ci/promote
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production...ci/promote || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to promote (ci/promote vs origin/production). Skipping."
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production \
+            --head ci/promote \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base production \
+              --head ci/promote \
+              --title "Auto promote: development → production" \
+              --body "Auto-created after a merge into development."
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production \
+              --head ci/promote \
+              --json number --jq '.[0].number')
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/promote → production"
+            exit 1
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
