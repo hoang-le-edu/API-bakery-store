@@ -86,3 +86,5 @@ jobs:
           labels: auto-backup
           draft: false
           delete-branch: true
+          auto-merge: true
+          merge-method: merge
