@@ -1,0 +1,57 @@
+name: Auto Promote to Production
+
+on:
+  pull_request:
+    types: [closed]         
+    branches:
+      - development        
+
+jobs:
+  promote:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Set Git identity
+        run: |
+          git config user.name  "ci-promote-bot"
+          git config user.email "ci-promote-bot@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: |
+          git fetch origin +development:development +production:production +production_backup:production_backup
+
+      # Merge development -> production (ff-only)
+      - name: Promote to production
+        run: |
+          set -e
+          git checkout production
+          git reset --hard origin/production
+          git merge --ff-only origin/development
+          git push origin production
+
+      # Merge production -> production_backup (ff-only)
+      - name: Update production_backup
+        run: |
+          set -e
+          git checkout production_backup
+          git reset --hard origin/production_backup
+          git merge --ff-only origin/production
+          git push origin production_backup
+
+      # Tag release
+      - name: Create release tag
+        run: |
+          set -e
+          DATE=$(date -u +%Y%m%d-%H%M%S)
+          TAG="release-${DATE}"
+          git tag -a "$TAG" -m "Auto release from development PR #${{ github.event.pull_request.number }}"
+          git push origin "$TAG"
