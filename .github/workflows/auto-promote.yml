@@ -49,16 +49,46 @@ jobs:
           set -e
           git push origin ci/promote --force-with-lease
 
-      - name: Open/Update PR to production (auto-delete ci branch on merge)
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: ci/promote
-          base: production
-          title: "Auto promote: development → production"
-          body: |
-            This PR was auto-created after a merge into `development`.
-            - Type: fast-forward promotion (no CI merge commits)
-            - Source: "${{ github.repository }}@${{ github.sha }}"
-          labels: auto-promote
-          draft: false
-          delete-branch: true
+      - name: Create/merge PR to production (ci/promote → production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -e
+
+          # Skip if no differences between production and ci/promote
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production...ci/promote || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to promote (ci/promote vs origin/production). Skipping."
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production \
+            --head ci/promote \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base production \
+              --head ci/promote \
+              --title "Auto promote: development → production" \
+              --body "Auto-created after a merge into development."
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production \
+              --head ci/promote \
+              --json number --jq '.[0].number')
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/promote → production"
+            exit 1
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
