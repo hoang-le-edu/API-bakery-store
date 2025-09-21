@@ -62,3 +62,5 @@ jobs:
           labels: auto-promote
           draft: false
           delete-branch: true
+          auto-merge: true
+          merge-method: merge
