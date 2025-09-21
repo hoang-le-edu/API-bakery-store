@@ -80,6 +80,13 @@ jobs:
         run: |
           set -e
 
+          # Skip if no differences between production_backup and ci/backup
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production_backup...ci/backup || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to backup (ci/backup vs origin/production_backup). Skipping."
+            exit 0
+          fi
+
           PR_NUMBER=$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --state open \
@@ -93,8 +100,7 @@ jobs:
               --base production_backup \
               --head ci/backup \
               --title "Auto backup: production → production_backup" \
-              --body "Auto-created after a successful promote workflow." \
-              --label auto-backup
+              --body "Auto-created after a successful promote workflow."
 
             PR_NUMBER=$(gh pr list \
               --repo "$GITHUB_REPOSITORY" \

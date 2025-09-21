@@ -56,6 +56,13 @@ jobs:
         run: |
           set -e
 
+          # Skip if no differences between production and ci/promote
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production...ci/promote || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to promote (ci/promote vs origin/production). Skipping."
+            exit 0
+          fi
+
           PR_NUMBER=$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --state open \
@@ -69,8 +76,7 @@ jobs:
               --base production \
               --head ci/promote \
               --title "Auto promote: development → production" \
-              --body "Auto-created after a merge into development." \
-              --label auto-promote
+              --body "Auto-created after a merge into development."
 
             PR_NUMBER=$(gh pr list \
               --repo "$GITHUB_REPOSITORY" \
