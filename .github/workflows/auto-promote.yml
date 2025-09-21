@@ -1,29 +1,30 @@
-name: Auto Promote to Production
+name: Auto Promote (open PR to production)
 
 on:
   pull_request:
-    types: [closed]          # run only when a PR targeting development is closed
-    branches: [development]  # base branch = development
+    types: [closed]           # run only when a PR targeting development is closed
+    branches: [development]   # base branch = development
 
 concurrency:
-  group: promote-${{ github.ref }}  # prevent overlapping promotes on the same ref
+  group: promote-${{ github.ref }}  # avoid overlapping promotions on same ref
   cancel-in-progress: false
 
 jobs:
-  promote:
-    if: github.event.pull_request.merged == true   # proceed only if the PR was merged (not just closed)
+  open-promote-pr:
+    if: github.event.pull_request.merged == true   # proceed only if the PR was merged
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # allow pushes and tags via GITHUB_TOKEN
+      contents: write          # push temp branch
+      pull-requests: write     # open/update PR
 
     steps:
       - name: Checkout development (full history)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0      # need full history for accurate merges/tags
-          ref: development    # ensure we operate from the base branch
+          fetch-depth: 0        # full history for safe merges
+          ref: development
 
-      - name: Set Git identity
+      - name: Set Git identity (for any local commits if needed)
         run: |
           git config user.name  "ci-promote-bot"
           git config user.email "ci-promote-bot@users.noreply.github.com"
@@ -33,38 +34,37 @@ jobs:
           # Update remote-tracking refs only (do NOT overwrite local branches)
           git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      # === Promote development -> production (fast-forward only) ===
-      - name: Promote to production (ff-only)
+      - name: Prepare promote branch (base: production → ff with development)
         run: |
           set -e
-          # Create/reset local 'production' from its remote if exists; otherwise start from development
+          # Start from current production; if production doesn't exist yet, start from development
           if git show-ref --verify --quiet refs/remotes/origin/production; then
             git checkout -B production origin/production
           else
             git checkout -B production origin/development
           fi
-          # Fast-forward merge ensures a clean linear history; job fails if not possible
+
+          # Create/update the fixed CI branch from production
+          git checkout -B ci/promote
+
+          # Fast-forward CI branch with development (fail if not fast-forwardable)
           git merge --ff-only origin/development
-          git push origin production
 
-      # === Keep production_backup aligned with production (fast-forward only) ===
-      - name: Update production_backup (ff-only)
+      - name: Push ci/promote (force-with-lease to update safely)
         run: |
           set -e
-          # Create/reset local 'production_backup' from its remote if exists; otherwise start from production
-          if git show-ref --verify --quiet refs/remotes/origin/production_backup; then
-            git checkout -B production_backup origin/production_backup
-          else
-            git checkout -B production_backup origin/production
-          fi
-          git merge --ff-only origin/production
-          git push origin production_backup
+          git push origin ci/promote --force-with-lease
 
-      # (Optional) Create a release tag for traceability
-      - name: Create release tag
-        run: |
-          set -e
-          DATE=$(date -u +%Y%m%d-%H%M%S)
-          TAG="release-${DATE}"
-          git tag -a "$TAG" -m "Auto release from development PR #${{ github.event.pull_request.number }}"
-          git push origin "$TAG"
+      - name: Open/Update PR to production (auto-delete head branch on merge)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/promote                 # fixed CI branch to avoid branch clutter
+          base: production
+          title: "Auto promote: development → production"
+          body: |
+            This PR was auto-created after a merge into `development`.
+            - Type: fast-forward promotion (no CI merge commits)
+            - Source: `${{ github.repository }}@${{ github.sha }}`
+          labels: auto-promote
+          draft: false
+          delete-branch: true               # delete ci/promote after PR is merged
