@@ -52,17 +52,37 @@ jobs:
       - name: Create/merge PR to production (ci/promote → production)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -e
-          # Create PR if missing
-          if ! gh pr list --state open --base production --head ci/promote --json number -q '.[0].number' >/dev/null; then
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production \
+            --head ci/promote \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
             gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
               --base production \
               --head ci/promote \
               --title "Auto promote: development → production" \
               --body "Auto-created after a merge into development." \
               --label auto-promote
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production \
+              --head ci/promote \
+              --json number --jq '.[0].number')
           fi
-          # Get PR number, enable auto-merge (merge commit) or merge immediately if allowed
-          PR_NUMBER=$(gh pr list --state open --base production --head ci/promote --json number -q '.[0].number')
-          gh pr merge "$PR_NUMBER" --merge --auto
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/promote → production"
+            exit 1
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
