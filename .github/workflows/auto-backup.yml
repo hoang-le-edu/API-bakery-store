@@ -76,15 +76,37 @@ jobs:
         if: ${{ steps.need_backup.outputs.run == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -e
-          if ! gh pr list --state open --base production_backup --head ci/backup --json number -q '.[0].number' >/dev/null; then
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production_backup \
+            --head ci/backup \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
             gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
               --base production_backup \
               --head ci/backup \
               --title "Auto backup: production → production_backup" \
               --body "Auto-created after a successful promote workflow." \
               --label auto-backup
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production_backup \
+              --head ci/backup \
+              --json number --jq '.[0].number')
           fi
-          PR_NUMBER=$(gh pr list --state open --base production_backup --head ci/backup --json number -q '.[0].number')
-          gh pr merge "$PR_NUMBER" --merge --auto
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/backup → production_backup"
+            exit 1
+          fi
+
+          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
