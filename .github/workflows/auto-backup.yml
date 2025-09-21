@@ -1,8 +1,9 @@
 name: Auto Backup (open PR to production_backup)
 
 on:
-  push:
-    branches: [production]     # run when production changes
+  pull_request:
+    types: [closed]            # run when a PR to production is closed
+    branches: [production]     # base branch is production
 
 concurrency:
   group: "backup-${{ github.ref }}"
@@ -10,10 +11,11 @@ concurrency:
 
 jobs:
   open-backup-pr:
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write          # push ci branch
+      pull-requests: write     # open/update PR
 
     steps:
       - name: Checkout production (full history)
