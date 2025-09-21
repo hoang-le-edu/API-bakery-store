@@ -3,6 +3,7 @@ name: Auto Backup (open PR to production_backup)
 on:
   push:
     branches: [production]
+  workflow_dispatch:
 
 concurrency:
   group: "backup-${{ github.run_id }}"
