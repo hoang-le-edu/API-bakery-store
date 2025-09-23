@@ -90,8 +90,10 @@ jobs:
             exit 1
           fi
 
-          # Try to merge now; if blocked by checks/reviews, leave PR open
-          if ! gh pr merge "$PR_NUMBER" --${MERGE_METHOD} --repo "$GITHUB_REPOSITORY"; then
+          if gh pr merge "$PR_NUMBER" --${MERGE_METHOD} --repo "$GITHUB_REPOSITORY"; then
+            # Delete source branch after successful merge
+            git push origin :ci/backup || true
+          else
             echo "Backup merge not possible now (checks/reviews/policies)."
             exit 0
           fi
