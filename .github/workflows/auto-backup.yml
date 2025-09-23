@@ -54,17 +54,11 @@ jobs:
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare backup branch (production_backup → fast-forward with production)
+      - name: Prepare backup branch from production (no local merge)
         if: ${{ steps.need_backup.outputs.run == 'true' }}
         run: |
           set -e
-          if git show-ref --verify --quiet refs/remotes/origin/production_backup; then
-            git checkout -B production_backup origin/production_backup
-          else
-            git checkout -B production_backup origin/production
-          fi
-          git checkout -B ci/backup
-          git merge --ff-only origin/production
+          git checkout -B ci/backup origin/production
 
       - name: Push ci/backup
         if: ${{ steps.need_backup.outputs.run == 'true' }}
