@@ -33,16 +33,10 @@ jobs:
         run: |
           git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      - name: Prepare promote branch (base production; fast-forward with development)
+      - name: Prepare promote branch from development (no local merge)
         run: |
           set -e
-          if git show-ref --verify --quiet refs/remotes/origin/production; then
-            git checkout -B production origin/production
-          else
-            git checkout -B production origin/development
-          fi
-          git checkout -B ci/promote
-          git merge --ff-only origin/development
+          git checkout -B ci/promote origin/development
 
       - name: Push ci/promote
         run: |

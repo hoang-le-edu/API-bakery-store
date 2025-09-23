@@ -1,10 +1,9 @@
 name: Auto Backup (open PR to production_backup)
 
 on:
-  workflow_run:
-    # MUST match your promote workflow's name exactly
-    workflows: ["Auto Promote (open PR to production)"]
-    types: [completed]
+  push:
+    branches: [production]
+  workflow_dispatch:
 
 concurrency:
   group: "backup-${{ github.run_id }}"
@@ -12,8 +11,6 @@ concurrency:
 
 jobs:
   open-backup-pr:
-    # run only if the promote workflow finished successfully
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write          # push ci branch
@@ -35,39 +32,17 @@ jobs:
           # Update remote-tracking refs only (do NOT overwrite local branches)
           git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      - name: Decide if backup is needed
-        id: need_backup
-        shell: bash
-        run: |
-          set -e
-          PROD=$(git rev-parse --verify "refs/remotes/origin/production" || echo "")
-          BACK=$(git rev-parse --verify "refs/remotes/origin/production_backup" || echo "")
-          if [ -z "$PROD" ]; then
-            echo "No production branch yet → skip."
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [ -n "$BACK" ] && [ "$PROD" = "$BACK" ]; then
-            echo "production == production_backup → nothing to do."
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "run=true" >> "$GITHUB_OUTPUT"
-
       - name: Prepare backup branch from production (no local merge)
-        if: ${{ steps.need_backup.outputs.run == 'true' }}
         run: |
           set -e
           git checkout -B ci/backup origin/production
 
       - name: Push ci/backup
-        if: ${{ steps.need_backup.outputs.run == 'true' }}
         run: |
           set -e
           git push origin ci/backup --force-with-lease
 
       - name: Create/merge PR to production_backup (ci/backup → production_backup)
-        if: ${{ steps.need_backup.outputs.run == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -109,4 +84,14 @@ jobs:
             exit 1
           fi
 
-          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
+          MERGE_METHOD=$(gh repo view "$GITHUB_REPOSITORY" --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed --jq 'if .mergeCommitAllowed then "merge" else if .squashMergeAllowed then "squash" else if .rebaseMergeAllowed then "rebase" else "none" end end end')
+          if [ "$MERGE_METHOD" = "none" ]; then
+            echo "No merge methods are allowed on this repository."
+            exit 1
+          fi
+
+          # Try to merge now; if blocked by checks/reviews, leave PR open
+          if ! gh pr merge "$PR_NUMBER" --${MERGE_METHOD} --repo "$GITHUB_REPOSITORY"; then
+            echo "Backup merge not possible now (checks/reviews/policies)."
+            exit 0
+          fi
