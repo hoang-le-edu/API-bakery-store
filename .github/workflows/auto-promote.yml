@@ -85,4 +85,16 @@ jobs:
             exit 1
           fi
 
-          gh pr merge "$PR_NUMBER" --merge --auto --repo "$GITHUB_REPOSITORY"
+          MERGE_METHOD=$(gh repo view "$GITHUB_REPOSITORY" --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed --jq 'if .mergeCommitAllowed then "merge" else if .squashMergeAllowed then "squash" else if .rebaseMergeAllowed then "rebase" else "none" end end end')
+          if [ "$MERGE_METHOD" = "none" ]; then
+            echo "No merge methods are allowed on this repository."
+            exit 1
+          fi
+
+          if gh pr merge "$PR_NUMBER" --${MERGE_METHOD} --repo "$GITHUB_REPOSITORY"; then
+            # Delete source branch after successful merge
+            git push origin :ci/promote || true
+          else
+            echo "Merge not possible now (checks/reviews/policies)."
+            exit 0
+          fi
