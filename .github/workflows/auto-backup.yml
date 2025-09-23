@@ -32,10 +32,14 @@ jobs:
           # Update remote-tracking refs only (do NOT overwrite local branches)
           git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
 
-      - name: Prepare backup branch from production (no local merge)
+      - name: Prepare backup branch from production (force mirror, no merge)
         run: |
           set -e
-          git checkout -B ci/backup origin/production
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+          git update-ref -d refs/heads/ci/backup || true
+          git checkout --detach refs/remotes/origin/production
+          git checkout -B ci/backup
+          git reset --hard refs/remotes/origin/production
 
       - name: Push ci/backup
         run: |
