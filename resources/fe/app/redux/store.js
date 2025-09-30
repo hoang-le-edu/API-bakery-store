@@ -34,5 +34,5 @@ const reducer = combineReducers({
 
 export const store = configureStore({
     reducer,
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunk),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({thunk: false}).concat(thunk),
 });
