@@ -17,18 +17,10 @@ yarn-error.log
 /package-lock.json
 vite.config.js
 
-# be
-/config
-#/database
 /node_modules
-/public
-#/routes/api.php
-/storage
 
 # fe
-/resources/fe/app/hooks
 /resources/fe/app/modules
-/resources/fe/settings
 /resources/views
 
 
