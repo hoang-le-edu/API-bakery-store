@@ -4,7 +4,7 @@ import {formatVietnameseCurrency} from '../../../locales/currencyFormat.js';
 import {Drawer, Modal} from 'flowbite';
 import {useDispatch, useSelector} from "react-redux";
 import {adminDeleteOrder, adminUpdateOrder, getAllOrdersAdmin} from "../../../redux/action/orderAction.js";
-import {notify} from "../../../layouts/Notification/notify.jsx";
+import {notify} from "../../../layouts/notification/notify.jsx";
 
 const OrderCRUD = () => {
     const dispatch = useDispatch();

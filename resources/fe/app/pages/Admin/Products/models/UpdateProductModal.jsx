@@ -6,7 +6,7 @@ import {
     adminUpdateProduct,
     CreateProduct
 } from "../../../../redux/action/productAction.js";
-import {notify} from "../../../../layouts/Notification/notify.jsx";
+import {notify} from "../../../../layouts/notification/notify.jsx";
 
 const UpdateProductModal = React.memo(({isOpen, onClose, selectedProductId, categories, topping_data}) => {
     const dispatch = useDispatch();

@@ -10,7 +10,7 @@ import {
     updateProfile
 } from "firebase/auth";
 import axios from "axios";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 
 export const doCreateUserWithEmailAndPassword = async (email, password) => {
     return createUserWithEmailAndPassword(auth, email, password)
