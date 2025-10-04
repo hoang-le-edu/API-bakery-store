@@ -22,9 +22,19 @@ return [
 
             'project_id' => env('FIREBASE_PROJECT_ID'),
 
-            'credentials' => [
-                'file' => env('FIREBASE_CREDENTIALS', env('GOOGLE_APPLICATION_CREDENTIALS')),
-            ],
+            'credentials' => (static function () {
+                $json = env('FIREBASE_CREDENTIALS_JSON');
+                if (!empty($json)) {
+                    $decoded = json_decode(base64_decode($json, true) ?: $json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        return ['json' => $decoded];
+                    }
+                }
+
+                return [
+                    'file' => env('FIREBASE_CREDENTIALS', env('GOOGLE_APPLICATION_CREDENTIALS')),
+                ];
+            })(),
 
             /*
              * ------------------------------------------------------------------------
