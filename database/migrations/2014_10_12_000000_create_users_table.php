@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('firebase_uid')->unique(); // Firebase UID
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone_number')->unique()->default('');
+            $table->string('phone_number')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable(); // Firebase users don't have password
             $table->boolean('is_admin')->default(false);
@@ -35,7 +35,7 @@ return new class extends Migration
 //            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
 
             // update
-            $table->text('custom_token')->unique()->nullable()->default(null); // use for authenticate admin
+            $table->text('custom_token')->nullable(); // use for authenticate admin
 
         });
     }
