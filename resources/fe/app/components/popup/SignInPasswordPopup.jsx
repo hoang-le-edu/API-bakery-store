@@ -3,7 +3,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {resetStatus} from '../../redux/action/userAction.js';
 import SpinnerLoading from '../loading/SpinnerLoading.jsx';
 import {doSignInWithEmailAndPassword, doSignInWithGoogle} from "../../modules/firebase/auth.js";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {useTranslation} from "react-i18next";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {fetchCart} from "../../redux/action/cartAction.js";

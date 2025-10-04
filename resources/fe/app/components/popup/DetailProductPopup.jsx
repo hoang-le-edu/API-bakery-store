@@ -4,7 +4,7 @@ import {formatVietnameseCurrency} from '../../locales/currencyFormat.js';
 import {addProductToCart, fetchCart, resetCart, updateProductInCart} from "../../redux/action/cartAction.js";
 import {useAuth} from "../../hooks/contexts/authContext/index.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 import {FaArrowLeft, FaArrowRight} from "react-icons/fa";
 import {useTranslation} from "react-i18next";

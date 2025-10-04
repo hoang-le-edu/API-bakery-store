@@ -5,7 +5,7 @@ import {formatDate} from '../../locales/dateFormat.js';
 import {deleteCart, deleteProductInCart, deleteToppingInCart, fetchCart} from "../../redux/action/cartAction.js";
 import PaymentDetailPopup from "./PaymentDetailPopup.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {useTranslation} from "react-i18next";
 
