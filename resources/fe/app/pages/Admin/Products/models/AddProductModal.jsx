@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useDispatch} from "react-redux";
-import {notify} from "../../../../layouts/Notification/notify.jsx";
+import {notify} from "../../../../layouts/notification/notify.jsx";
 import {adminGetAllProducts, CreateProduct} from "../../../../redux/action/productAction.js";
 
 const AddProductModal = ({isOpen, onClose, categories, topping_data}) => {

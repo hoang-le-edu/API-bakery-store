@@ -4,7 +4,7 @@ import InputElement from "../element/InputElement.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 import {userRegister} from "../../redux/action/userAction.js";
 import {doCreateUserWithEmailAndPassword, doUpdateProfile} from "../../modules/firebase/auth.js";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {useTranslation} from "react-i18next";
 import {doSignOut} from "../../modules/firebase/auth.js";
 
