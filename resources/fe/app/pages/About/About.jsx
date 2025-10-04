@@ -1,8 +1,8 @@
 import React from "react";
-import AboutInfoElement from "../../layouts/about/AboutInfoElement";
-import AboutStoryElement from "../../layouts/about/AboutStoryElement";
-import AboutProfileElement from "../../layouts/about/AboutProfileElement";
-import AboutServicesElement from "../../layouts/about/AboutServicesElement";
+// import AboutInfoElement from "../../layouts/about/AboutInfoElement";
+// import AboutStoryElement from "../../layouts/about/AboutStoryElement";
+// import AboutProfileElement from "../../layouts/about/AboutProfileElement";
+// import AboutServicesElement from "../../layouts/about/AboutServicesElement";
 
 const About = () => {
     return (
@@ -14,16 +14,16 @@ const About = () => {
                 </div>
 
                 {/* 2. story  */}
-                <AboutStoryElement />
+                {/* <AboutStoryElement /> */}
 
                 {/* 3. information */}
-                <AboutInfoElement />
+                {/* <AboutInfoElement /> */}
 
                 {/* 4. profile */}
-                <AboutProfileElement />
+                {/* <AboutProfileElement /> */}
 
                 {/* 5. services */}
-                <AboutServicesElement />
+                {/* <AboutServicesElement /> */}
             </div>
         </section>
     );
