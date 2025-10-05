@@ -134,6 +134,10 @@ Route::middleware(['firebase.auth'])->group(function () {
         Route::post('/orders/update/{id}', [\App\Http\Controllers\OrderController::class, 'update']);
         Route::delete('/orders/delete/{id}', [\App\Http\Controllers\OrderController::class, 'destroy']);
     });
+
+    // ping-200
+    Route::get('ping-200-in', fn() => response()->json(['ok'=>true]));
+
 });
 
 Route::get('/customer/product/{id}', [ProductController::class, 'getProductDetail']);
@@ -152,6 +156,10 @@ Route::post('/auth/check-firebase-user', [AuthenticationController::class, 'chec
 Route::post('/auth/setCustomTokenForAdmin', [AuthenticationController::class, 'setCustomTokenForAdmin']);
 Route::post('/auth/addAdmin', [AuthenticationController::class, 'addAdmin']);
 Route::post('/auth/getCustomToken', [AuthenticationController::class, 'getCustomTokenForAdmin']);
+
+// ping-200
+Route::get('ping-200-out', fn() => response()->json(['ok'=>true]));
+
 
 
 
