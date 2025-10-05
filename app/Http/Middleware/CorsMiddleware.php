@@ -18,17 +18,26 @@ class CorsMiddleware
     {
         Log::debug('CorsMiddleware');
 
+        $allowHeaders = $request->headers->get('Access-Control-Request-Headers', '*');
+        $headers = [
+            'Access-Control-Allow-Origin'      => '*', // (Nếu dùng cookie/credentials: không dùng *, phải echo origin hợp lệ và thêm Allow-Credentials: true)
+            'Access-Control-Allow-Methods'     => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers'     => $allowHeaders,
+            'Access-Control-Max-Age'           => '3600',
+            'Vary'                             => 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
+        ];
+
+        // ✅ Preflight: trả 204 ngay, KHÔNG gọi $next()
+        if ($request->isMethod('OPTIONS')) {
+            return response('', 204)->withHeaders($headers);
+        }
+
+        /** @var Response $response */
         $response = $next($request);
 
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', '*');
-
-//        // Set CSP header to allow fonts from assets.ngrok.com
-//        $response->headers->set(
-//            'Content-Security-Policy',
-//            "default-src 'self' https://cdn.ngrok.com 'unsafe-eval' 'unsafe-inline'; font-src 'self' https://assets.ngrok.com; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; script-src 'self' 'unsafe-inline' http://[::1]:5173"
-//        );
+        foreach ($headers as $k => $v) {
+            $response->headers->set($k, $v);
+        }
 
         return $response;
     }
