@@ -65,10 +65,11 @@ export const productsReducer = (state = products, action) => {
             return {...state, loading: true};
 
         case GET_PRODUCTS_SUCCESS: {
-            const products = action.payload.data;
-            const total = action.payload.products_count;
-            const hasMore = action.payload.pagination.has_more;
-            const topping_data = action.payload.topping_data;
+            const payload = action.payload ?? {};
+            const products = payload?.data ?? [];
+            const total = payload?.products_count ?? 0;
+            const hasMore = Boolean(payload?.pagination?.has_more);
+            const topping_data = payload?.topping_data ?? [];
             // const firstProductId = action.payload.pagination.first_product_id;
             // const lastProductId = action.payload.pagination.last_product_id;
             // console.log("products reducer", action.payload, total);
