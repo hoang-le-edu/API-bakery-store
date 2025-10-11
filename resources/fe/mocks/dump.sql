@@ -159,15 +159,15 @@ SELECT
   UUID(), NOW(), NOW(),
   CONCAT(tc.category_name,' - ',
          CASE
-           WHEN tc.is_rau_cau=1 THEN (SELECT f.flavor FROM tmp_flavors f WHERE f.kind IN ('rc','any') ORDER BY RAND() LIMIT 1)
-           WHEN tc.category_name='Bánh ngọt' THEN (SELECT f.flavor FROM tmp_flavors f WHERE f.kind IN ('bngot','any') ORDER BY RAND() LIMIT 1)
-           WHEN tc.category_name='Trà sữa'   THEN (SELECT f.flavor FROM tmp_flavors f WHERE f.kind IN ('trasua','any') ORDER BY RAND() LIMIT 1)
-           ELSE (SELECT f.flavor FROM tmp_flavors f WHERE f.kind='any' ORDER BY RAND() LIMIT 1)
+           WHEN tc.is_rau_cau=1 THEN (SELECT flavor FROM (SELECT flavor FROM tmp_flavors WHERE kind IN ('rc','any')) f1 ORDER BY RAND() LIMIT 1)
+           WHEN tc.category_name='Bánh ngọt' THEN (SELECT flavor FROM (SELECT flavor FROM tmp_flavors WHERE kind IN ('bngot','any')) f2 ORDER BY RAND() LIMIT 1)
+           WHEN tc.category_name='Trà sữa'   THEN (SELECT flavor FROM (SELECT flavor FROM tmp_flavors WHERE kind IN ('trasua','any')) f3 ORDER BY RAND() LIMIT 1)
+           ELSE (SELECT flavor FROM (SELECT flavor FROM tmp_flavors WHERE kind='any') f4 ORDER BY RAND() LIMIT 1)
          END,
          ' #', LPAD(seq.n,2,'0')),
   NULL,
   CASE WHEN tc.is_rau_cau=1
-       THEN (SELECT f.image FROM tmp_flavors f WHERE f.kind IN ('rc','any') AND f.image IS NOT NULL ORDER BY RAND() LIMIT 1)
+       THEN (SELECT image FROM (SELECT image FROM tmp_flavors WHERE kind IN ('rc','any') AND image IS NOT NULL) f5 ORDER BY RAND() LIMIT 1)
        ELSE NULL END,
   'active',
   (tc.base_price + (seq.n-1)*tc.price_step),
