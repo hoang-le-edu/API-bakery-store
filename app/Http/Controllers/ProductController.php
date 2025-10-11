@@ -15,16 +15,17 @@ class ProductController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-//        return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
 
         // Get the number of items to fetch, defaulting to 10
         $pageSize = $request->input('page_size', 10);
 
         // Initialize the query builder for products
-        $query = Product::select('products.id as product_id',
+        $query = Product::select(
+            'products.id as product_id',
             'products.name as product_name',
             'products.description as product_description',
             'products.price as product_price',
@@ -33,20 +34,21 @@ class ProductController extends BaseController
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
-            'categories.description as category_description')
+            'categories.description as category_description'
+        )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
             ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
         ;  // Assuming ascending priority
 
-//        $query->orderBy('products.id', 'asc');  // Order products within the category
+        //        $query->orderBy('products.id', 'asc');  // Order products within the category
 
-//        if ($request->input('last_product_id') !== 'undefined') {
-//            $query->where('product_id', '>', $request->input('last_product_id'));
-//                    return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
-//        }
+        //        if ($request->input('last_product_id') !== 'undefined') {
+        //            $query->where('product_id', '>', $request->input('last_product_id'));
+        //                    return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
+        //        }
 
         // Fetch the products
         $products = $query->get();
@@ -112,13 +114,14 @@ class ProductController extends BaseController
 
     public function getProducts(Request $request, $category = null): JsonResponse
     {
-//        return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
 
         // Initialize the query builder for products
-        $query = Product::select('products.id as product_id',
+        $query = Product::select(
+            'products.id as product_id',
             'products.name as product_name',
             'products.description as product_description',
             'products.price as product_price',
@@ -126,13 +129,14 @@ class ProductController extends BaseController
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
-            'categories.description as category_description')
+            'categories.description as category_description'
+        )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
             ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
             ->where('products.status', 'active')
             ->where('products.is_topping', 0);
 
-//        $query = Product::All();
+        //        $query = Product::All();
 
         $limit = $request->input('limit');
 
@@ -198,10 +202,10 @@ class ProductController extends BaseController
             // Order by category priority
             $query->orderBy('categories.priority', 'desc');
 
-//            if ($limit && $limit !== 'undefined') {
-//                // Order by category priority
-//                $query->orderBy('products.priority', 'desc');  // Assuming ascending priority
-//            }
+            //            if ($limit && $limit !== 'undefined') {
+            //                // Order by category priority
+            //                $query->orderBy('products.priority', 'desc');  // Assuming ascending priority
+            //            }
         }
 
         // Get the number of items to fetch, defaulting to 10
@@ -213,6 +217,7 @@ class ProductController extends BaseController
         else
             $products = $query->limit($limit === 'undefined' || is_null($limit) ? $pageSize : $limit)->get();
 
+        $products = $products->sortBy('category_id');
         $return_data = [];
         $prev_category_id = null;
         foreach ($products as $product) {
@@ -308,10 +313,10 @@ class ProductController extends BaseController
      */
     public function store(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Products validated successfully.',
-//            'data' => $request->get('toppings_id'),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products validated successfully.',
+        //            'data' => $request->get('toppings_id'),
+        //        ], 200);
 
         // Validate incoming data
         $validated = $request->validate([
@@ -388,7 +393,6 @@ class ProductController extends BaseController
 
             // Return the response with the newly created product, including its images
             return response()->json(['message' => 'Product created successfully.', 'data' => $product], 201);
-
         } catch (\Exception $e) {
             Log::error('Error creating product', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Error creating product', 'error' => $e->getMessage()], 500);
@@ -488,10 +492,10 @@ class ProductController extends BaseController
      */
     public function update(Request $request, string $id)
     {
-//        return response()->json([
-//            'message' => 'Products validated successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products validated successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -546,47 +550,47 @@ class ProductController extends BaseController
         }
 
         // Handle Base64 images
-//        if (isset($validated['productDetailImages'])) {
-//            // Delete old images if necessary
-//            foreach ($product->images as $image) {
-//                Storage::disk('public')->delete($image->image_path);
-//                $image->delete();
-//            }
-//            $index = 0;
-//            // Save new images from Base64
-//            foreach ($validated['productDetailImages'] as $base64Image) {
-//                $image_parts = explode(";base64,", $base64Image);
-//                $image_type_aux = explode("image/", $image_parts[0]);
-//                return response()->json([
-//                    'message' => 'Products validated  2 successfully.',
-//                    'data' => $image_parts,
-//                ], 200);
-//                $image_type = $image_type_aux[1];
-//
-//                $image_base64 = base64_decode($image_parts[1]);
-//                $filename = uniqid('product_') . '.' . $image_type; // Generate a unique name
-//                $directory = storage_path('app/public/build/assets/product_image'); // Target directory
-//                $path = "$directory/$filename";
-//
-//
-//
-//                // Ensure the directory exists
-//                if (!file_exists($directory)) {
-//                    mkdir($directory, 0755, true);
-//                }
-//
-//                // Save the decoded content to the file
-//                file_put_contents($path, $image_base64);
-//
-//                // Save the relative path in the database
-//                $product->images()->create(['image_path' => "product_image/$filename"]);
-//
-////                // Set the first image as the main image (image attribute)
-////                if ($index === 0) {
-////                    $product->update(['image' => "products/$filename"]);
-////                }
-////                $index++;
-//            }
+        //        if (isset($validated['productDetailImages'])) {
+        //            // Delete old images if necessary
+        //            foreach ($product->images as $image) {
+        //                Storage::disk('public')->delete($image->image_path);
+        //                $image->delete();
+        //            }
+        //            $index = 0;
+        //            // Save new images from Base64
+        //            foreach ($validated['productDetailImages'] as $base64Image) {
+        //                $image_parts = explode(";base64,", $base64Image);
+        //                $image_type_aux = explode("image/", $image_parts[0]);
+        //                return response()->json([
+        //                    'message' => 'Products validated  2 successfully.',
+        //                    'data' => $image_parts,
+        //                ], 200);
+        //                $image_type = $image_type_aux[1];
+        //
+        //                $image_base64 = base64_decode($image_parts[1]);
+        //                $filename = uniqid('product_') . '.' . $image_type; // Generate a unique name
+        //                $directory = storage_path('app/public/build/assets/product_image'); // Target directory
+        //                $path = "$directory/$filename";
+        //
+        //
+        //
+        //                // Ensure the directory exists
+        //                if (!file_exists($directory)) {
+        //                    mkdir($directory, 0755, true);
+        //                }
+        //
+        //                // Save the decoded content to the file
+        //                file_put_contents($path, $image_base64);
+        //
+        //                // Save the relative path in the database
+        //                $product->images()->create(['image_path' => "product_image/$filename"]);
+        //
+        ////                // Set the first image as the main image (image attribute)
+        ////                if ($index === 0) {
+        ////                    $product->update(['image' => "products/$filename"]);
+        ////                }
+        ////                $index++;
+        //            }
 
         // Handle image uploads
         if ($request->hasFile('productDetailImages')) {
@@ -657,17 +661,17 @@ class ProductController extends BaseController
 
     public function adminGetProductDetail(Request $request, string $productId): JsonResponse
     {
-//        $toppingList = $product->toppings()
-//            ->select('id', 'name', 'price') // Select only the columns you need
-//            ->get()
-//            ->map(function ($topping) {
-//                return [
-//                    'id' => $topping->id,
-//                    'name' => $topping->name,
-//                    'price' => $topping->price,
-//                    'is_selected' => false
-//                ];
-//            });
+        //        $toppingList = $product->toppings()
+        //            ->select('id', 'name', 'price') // Select only the columns you need
+        //            ->get()
+        //            ->map(function ($topping) {
+        //                return [
+        //                    'id' => $topping->id,
+        //                    'name' => $topping->name,
+        //                    'price' => $topping->price,
+        //                    'is_selected' => false
+        //                ];
+        //            });
 
         $product = Product::with(['images', 'categories', 'toppings'])->findOrFail($productId);
 
@@ -709,10 +713,10 @@ class ProductController extends BaseController
 
     public function searchProducts(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Products searched successfully.',
-//            'data' => $request->query('q'),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products searched successfully.',
+        //            'data' => $request->query('q'),
+        //        ], 200);
 
         $query = Product::query();
         $keyword = $request->query('q');
@@ -726,7 +730,4 @@ class ProductController extends BaseController
 
         return response()->json(['data' => $query->get()]);
     }
-
-
 }
-

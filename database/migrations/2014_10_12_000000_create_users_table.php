@@ -35,7 +35,7 @@ return new class extends Migration
 //            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
 
             // update
-            $table->text('custom_token')->unique()->nullable()->default(null); // use for authenticate admin
+            $table->text('custom_token')->nullable()->default(null); // use for authenticate admin
 
         });
     }

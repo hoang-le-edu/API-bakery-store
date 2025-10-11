@@ -40,6 +40,7 @@
         "hanhchinhvn": "^1.6.0",
         "i18next": "^24.2.2",
         "js-cookie": "^3.0.5",
+        "lodash": "^4.17.21",
         "notiwind": "^2.0.2",
         "otp-input-react": "^0.3.0",
         "react": "^19.0.0",
