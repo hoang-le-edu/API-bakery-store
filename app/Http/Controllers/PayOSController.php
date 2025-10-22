@@ -26,6 +26,34 @@ class PayOSController extends Controller
             config('services.payos.checksum_key')
         );
     }
+    /**
+     * @OA\Post(
+     *     path="/api/payos/create-payment-link",
+     *     tags={"Payment"},
+     *     summary="Create PayOS payment link",
+     *     description="Create a payment link for order using PayOS",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id"},
+     *             @OA\Property(property="order_id", type="string", example="9d4a5c8e-1234-5678-abcd-123456789abc")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment link created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="integer", example=0),
+     *             @OA\Property(property="message", type="string", example="Success"),
+     *             @OA\Property(property="checkoutUrl", type="string", example="https://pay.payos.vn/web/...")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Order not found"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
+     */
     public function createPayment(Request $request)
     {
         try {

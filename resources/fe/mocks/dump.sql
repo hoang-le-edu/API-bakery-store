@@ -116,13 +116,14 @@ INSERT INTO tmp_categories VALUES
 -- ===========================================================
 -- 5) BẢNG TẠM: FLAVORS + ẢNH
 -- ===========================================================
-DROP TEMPORARY TABLE IF EXISTS tmp_flavors;
-CREATE TEMPORARY TABLE tmp_flavors(
+DROP TABLE IF EXISTS tmp_flavors;
+CREATE TABLE IF NOT EXISTS tmp_flavors(
   flavor VARCHAR(50),
   image VARCHAR(255),
   kind  VARCHAR(20)
 );
 
+DELETE FROM tmp_flavors;
 INSERT INTO tmp_flavors VALUES
 ('dừa',        'Product/RauCauDua1.png','rc'),
 ('cà phê',     'Product/RauCauCafeDua.png','rc'),
@@ -184,6 +185,8 @@ JOIN products p
   ON p.created_by='1'
  AND p.is_topping=0
  AND p.name LIKE CONCAT(tc.category_name,'%');
+
+DROP TABLE IF EXISTS tmp_flavors;
 
 -- ===========================================================
 -- 8) GHÉP TOPPING (nhiều dữ liệu)
