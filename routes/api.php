@@ -147,6 +147,7 @@ Route::get('/customer/products/{category}', [ProductController::class, 'getProdu
 Route::get('/categories/options/all', [\App\Http\Controllers\CategoryController::class, 'getCategoryJson']);
 
 Route::post('/auth/login', [AuthenticationController::class, 'login']);
+Route::post('/auth/login-firebase', [AuthenticationController::class, 'loginWithFirebase']);
 Route::post('/auth/refresh', [AuthenticationController::class, 'refresh']);
 Route::post('/auth/auth-otp', [AuthenticationController::class, 'loginWithOtp']);
 Route::post('/auth/register', [AuthenticationController::class, 'register']);

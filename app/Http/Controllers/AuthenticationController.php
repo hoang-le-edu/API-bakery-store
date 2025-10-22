@@ -26,11 +26,45 @@ use App\Http\Controllers\ReportController;
 class AuthenticationController extends BaseController
 {
     /**
-     * Register api
-     *
-     * @return \Illuminate\Http\Response
+     * @OA\Post(
+     *     path="/api/auth/register",
+     *     tags={"Authentication"},
+     *     summary="Register a new user",
+     *     description="Register a new user with email, password, and Firebase UID",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","phone_number","firebase_uid"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="phone_number", type="string", example="0123456789"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="c_password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="firebase_uid", type="string", example="firebase_uid_here")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User registered successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="token", type="string"),
+     *                 @OA\Property(property="name", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Validation Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     )
+     * )
      */
-
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -99,7 +133,31 @@ class AuthenticationController extends BaseController
         return $this->sendResponse($success, 'User registered successfully.');
     }
 
-    // Generate OTP
+    /**
+     * @OA\Post(
+     *     path="/api/auth/gen-otp",
+     *     tags={"Authentication"},
+     *     summary="Generate OTP for phone number",
+     *     description="Generate and send OTP to the provided phone number",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"mobile_no"},
+     *             @OA\Property(property="mobile_no", type="string", example="0123456789", description="Phone number registered in the system")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="OTP generated successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Validation Error")
+     * )
+     */
     public function generate(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -187,6 +245,35 @@ class AuthenticationController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/auth-otp",
+     *     tags={"Authentication"},
+     *     summary="Login with OTP",
+     *     description="Authenticate user using OTP sent to phone number",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id","otp"},
+     *             @OA\Property(property="user_id", type="integer", example=1),
+     *             @OA\Property(property="otp", type="string", example="123456")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User login successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User login successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="token", type="string"),
+     *                 @OA\Property(property="user", type="object")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Invalid OTP or OTP Expired")
+     * )
+     */
     public function loginWithOtp(Request $request)
     {
         // Validation
@@ -240,6 +327,43 @@ class AuthenticationController extends BaseController
 //        }
 //    }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     tags={"Authentication"},
+     *     summary="Login with email and password",
+     *     description="Authenticate user using email and password",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User login successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User login successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="accessToken", type="string"),
+     *                 @OA\Property(property="refreshToken", type="string"),
+     *                 @OA\Property(property="user", type="object")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorised",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Unauthorised.")
+     *         )
+     *     )
+     * )
+     */
     public function login(Request $request): JsonResponse
     {
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
@@ -254,6 +378,229 @@ class AuthenticationController extends BaseController
             ], 'User login successfully.');
         } else {
             return $this->sendError('Unauthorised.', ['error' => 'Unauthorised'], 401);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login-firebase",
+     *     summary="Unified login with Firebase integration",
+     *     description="Login for both admin and regular users with Firebase authentication. Admin users will use custom token, regular users will use email/password Firebase auth.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="user@example.com", description="User email address"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123", description="User password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", example="9b5f..."),
+     *                     @OA\Property(property="email", type="string", example="user@example.com"),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="is_admin", type="integer", example=0),
+     *                     @OA\Property(property="firebase_uid", type="string", example="PbviNczyrEgGIP4jPZiB4G5ICJz1")
+     *                 ),
+     *                 @OA\Property(property="auth_method", type="string", example="custom_token", description="Authentication method used: 'custom_token' for admin, 'password' for regular user"),
+     *                 @OA\Property(
+     *                     property="firebase_auth",
+     *                     type="object",
+     *                     @OA\Property(property="idToken", type="string", example="eyJhbGc...", description="Firebase ID token"),
+     *                     @OA\Property(property="refreshToken", type="string", example="AOEOulZ...", description="Firebase refresh token"),
+     *                     @OA\Property(property="expiresIn", type="string", example="3600", description="Token expiration in seconds")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Invalid credentials",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invalid credentials")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error - Firebase authentication failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Firebase authentication failed")
+     *         )
+     *     )
+     * )
+     */
+    public function loginWithFirebase(Request $request): JsonResponse
+    {
+        try {
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'password' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error.', $validator->errors(), 400);
+            }
+
+            // Authenticate user with Laravel
+            if (!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+                return $this->sendError('Invalid credentials.', ['error' => 'Unauthorised'], 401);
+            }
+
+            $user = Auth::user();
+            $firebaseApiKey = env('VITE_FIREBASE_API_KEY');
+            
+            if (empty($firebaseApiKey)) {
+                throw new \Exception('Firebase API key not configured. Please set VITE_FIREBASE_API_KEY in .env');
+            }
+
+            // Check if user is admin with custom token
+            if ($user->is_admin === 1 && !empty($user->firebase_uid)) {
+                Log::info("Admin login attempt for: {$user->email}");
+
+                // Generate fresh custom token using internal method
+                try {
+                    $credentials = config('firebase.projects.app.credentials');
+                    
+                    if (empty($credentials)) {
+                        throw new \Exception('Firebase credentials not configured');
+                    }
+
+                    // Initialize Firebase
+                    $factory = new \Kreait\Firebase\Factory();
+                    
+                    if (isset($credentials['file']) && !empty($credentials['file'])) {
+                        $filePath = $credentials['file'];
+                        
+                        if (!str_starts_with($filePath, '/') && !preg_match('/^[A-Z]:/i', $filePath)) {
+                            $filePath = base_path($filePath);
+                        }
+                        
+                        if (!file_exists($filePath)) {
+                            throw new \Exception("Firebase credentials file not found: {$filePath}");
+                        }
+                        
+                        $factory = $factory->withServiceAccount($filePath);
+                    } elseif (isset($credentials['json']) && is_array($credentials['json'])) {
+                        $factory = $factory->withServiceAccount($credentials['json']);
+                    } else {
+                        throw new \Exception('Invalid Firebase credentials format');
+                    }
+                    
+                    $auth = $factory->createAuth();
+
+                    // Create custom token
+                    $customToken = $auth->createCustomToken(
+                        $user->firebase_uid,
+                        ['premiumAccount' => true]
+                    );
+
+                    $customTokenString = $customToken->toString();
+
+                    // Save to database
+                    $user->custom_token = $customTokenString;
+                    $user->save();
+
+                    Log::info("Generated new custom token for admin: {$user->email}");
+
+                    // Sign in with custom token to Firebase
+                    $firebaseResponse = \Illuminate\Support\Facades\Http::post(
+                        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={$firebaseApiKey}",
+                        [
+                            'token' => $customTokenString,
+                            'returnSecureToken' => true
+                        ]
+                    );
+
+                    if (!$firebaseResponse->successful()) {
+                        Log::error('Firebase signInWithCustomToken failed: ' . $firebaseResponse->body());
+                        throw new \Exception('Firebase authentication failed: ' . $firebaseResponse->json('error.message', 'Unknown error'));
+                    }
+
+                    $firebaseData = $firebaseResponse->json();
+
+                    return $this->sendResponse([
+                        'user' => [
+                            'id' => $user->id,
+                            'email' => $user->email,
+                            'name' => $user->name,
+                            'is_admin' => $user->is_admin,
+                            'firebase_uid' => $user->firebase_uid,
+                            'phone_number' => $user->phone_number
+                        ],
+                        'auth_method' => 'custom_token',
+                        'firebase_auth' => [
+                            'idToken' => $firebaseData['idToken'],
+                            'refreshToken' => $firebaseData['refreshToken'],
+                            'expiresIn' => $firebaseData['expiresIn']
+                        ]
+                    ], 'Admin login successful.');
+
+                } catch (\Exception $e) {
+                    Log::error('Admin Firebase auth failed: ' . $e->getMessage());
+                    throw $e;
+                }
+
+            } else {
+                // Regular user - use signInWithPassword
+                Log::info("Regular user login attempt for: {$user->email}");
+
+                $firebaseResponse = \Illuminate\Support\Facades\Http::post(
+                    "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={$firebaseApiKey}",
+                    [
+                        'email' => $request->email,
+                        'password' => $request->password,
+                        'returnSecureToken' => true
+                    ]
+                );
+
+                if (!$firebaseResponse->successful()) {
+                    Log::error('Firebase signInWithPassword failed: ' . $firebaseResponse->body());
+                    throw new \Exception('Firebase authentication failed: ' . $firebaseResponse->json('error.message', 'Unknown error'));
+                }
+
+                $firebaseData = $firebaseResponse->json();
+
+                return $this->sendResponse([
+                    'user' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'name' => $user->name,
+                        'is_admin' => $user->is_admin,
+                        'firebase_uid' => $user->firebase_uid ?? $firebaseData['localId'],
+                        'phone_number' => $user->phone_number
+                    ],
+                    'auth_method' => 'password',
+                    'firebase_auth' => [
+                        'idToken' => $firebaseData['idToken'],
+                        'refreshToken' => $firebaseData['refreshToken'],
+                        'expiresIn' => $firebaseData['expiresIn']
+                    ]
+                ], 'User login successful.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Login with Firebase failed: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            
+            return $this->sendError(
+                'Login failed.',
+                ['error' => $e->getMessage()],
+                500
+            );
         }
     }
 
@@ -277,6 +624,33 @@ class AuthenticationController extends BaseController
         return $success;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/auth/me",
+     *     tags={"Authentication"},
+     *     summary="Get current user information",
+     *     description="Get authenticated user's profile information",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User retrieved successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user", type="object"),
+     *                 @OA\Property(property="roles", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="permissions", type="object"),
+     *                 @OA\Property(property="visible_module", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="customer_info", type="object"),
+     *                 @OA\Property(property="report", type="object")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="User Not Found")
+     * )
+     */
     public function me(Request $request): JsonResponse
     {
         try {
@@ -323,6 +697,27 @@ class AuthenticationController extends BaseController
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     tags={"Authentication"},
+     *     summary="Logout user",
+     *     description="Logout the authenticated user and invalidate all tokens",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User logged out successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User logged out successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user_type", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
+     */
     public function logout(Request $request): JsonResponse
     {
         try {
@@ -353,6 +748,30 @@ class AuthenticationController extends BaseController
         return $system_modules;
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     tags={"Authentication"},
+     *     summary="Refresh access token",
+     *     description="Generate new access and refresh tokens using a valid refresh token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"refreshToken"},
+     *             @OA\Property(property="refreshToken", type="string", example="refresh_token_here")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Tokens refreshed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="accessToken", type="string"),
+     *             @OA\Property(property="refreshToken", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid or expired refresh token")
+     * )
+     */
     public function refresh(Request $request)
     {
         $request->validate([
@@ -395,6 +814,31 @@ class AuthenticationController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/check-firebase-user",
+     *     tags={"Authentication"},
+     *     summary="Check if Firebase user exists",
+     *     description="Check if a user with the given Firebase UID exists in the system",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"firebase_uid"},
+     *             @OA\Property(property="firebase_uid", type="string", example="firebase_uid_here")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="existed", type="boolean", example=true),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Validation Error")
+     * )
+     */
     public function checkFirebaseUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -463,10 +907,74 @@ class AuthenticationController extends BaseController
                 return response()->json(['message' => 'Unauthorized.'], 401);
             }
 
-            return response()->json([
-                'success' => true,
-                'custom_token' => $user->custom_token
-            ]);
+            // ✅ Generate NEW custom token every time instead of using old one from DB
+            try {
+                // Get Firebase credentials from config
+                $credentials = config('firebase.projects.app.credentials');
+                
+                if (empty($credentials)) {
+                    throw new \Exception('Firebase credentials not configured. Please set FIREBASE_CREDENTIALS or FIREBASE_CREDENTIALS_JSON in .env');
+                }
+
+                // Initialize Firebase with proper credentials format
+                $factory = new \Kreait\Firebase\Factory();
+                
+                // Handle different credential formats
+                if (isset($credentials['file']) && !empty($credentials['file'])) {
+                    $filePath = $credentials['file'];
+                    
+                    // Check if path is relative, make it absolute from base_path
+                    if (!str_starts_with($filePath, '/') && !preg_match('/^[A-Z]:/i', $filePath)) {
+                        $filePath = base_path($filePath);
+                    }
+                    
+                    if (!file_exists($filePath)) {
+                        throw new \Exception("Firebase credentials file not found: {$filePath}");
+                    }
+                    
+                    $factory = $factory->withServiceAccount($filePath);
+                } elseif (isset($credentials['json']) && is_array($credentials['json'])) {
+                    $factory = $factory->withServiceAccount($credentials['json']);
+                } else {
+                    throw new \Exception('Invalid Firebase credentials format');
+                }
+                
+                $auth = $factory->createAuth();
+
+                // Create custom token with additional claims (expires in 1 hour by default)
+                $customToken = $auth->createCustomToken(
+                    $user->firebase_uid,
+                    ['premiumAccount' => true]
+                );
+
+                $newToken = $customToken->toString();
+
+                // Optionally save to DB for logging purposes (not required)
+                $user->custom_token = $newToken;
+                $user->save();
+
+                Log::info("Generated new custom token for admin: {$user->email}");
+
+                return response()->json([
+                    'success' => true,
+                    'custom_token' => $newToken
+                ]);
+
+            } catch (\Exception $firebaseError) {
+                Log::error('Firebase token generation failed: ' . $firebaseError->getMessage());
+                
+                // Fallback to stored token if Firebase fails (not recommended but for backward compatibility)
+                if ($user->custom_token) {
+                    Log::warning('Using stored custom token as fallback');
+                    return response()->json([
+                        'success' => true,
+                        'custom_token' => $user->custom_token,
+                        'warning' => 'Token from cache, may be expired'
+                    ]);
+                }
+                
+                throw $firebaseError;
+            }
 
         } catch (\Exception $e) {
             Log::error('Error in getCustomTokenForAdmin: ' . $e->getMessage());

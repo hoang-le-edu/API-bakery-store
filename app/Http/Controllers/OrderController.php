@@ -521,6 +521,40 @@ class OrderController extends Controller
         }
         return $totalDiscount;
     }
+    /**
+     * @OA\Post(
+     *     path="/api/cart/addProductToCart",
+     *     tags={"Cart"},
+     *     summary="Add product to cart",
+     *     description="Add a product with optional toppings to one or multiple shopping carts",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product"},
+     *             @OA\Property(property="product", type="object",
+     *                 @OA\Property(property="product_id", type="integer"),
+     *                 @OA\Property(property="size", type="string", example="M"),
+     *                 @OA\Property(property="quantity", type="integer", example=1),
+     *                 @OA\Property(property="toppings_id", type="array", @OA\Items(type="integer")),
+     *                 @OA\Property(property="note", type="string"),
+     *                 @OA\Property(property="total_price", type="number")
+     *             ),
+     *             @OA\Property(property="order_ids", type="array", @OA\Items(type="integer"), description="Array of order IDs to add product to")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product added to cart successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product or Customer not found")
+     * )
+     */
     public function addProductToCart(Request $request)
     {
 //        return response()->json([
@@ -772,6 +806,32 @@ class OrderController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/cart/fetchCart",
+     *     tags={"Cart"},
+     *     summary="Fetch user's shopping cart",
+     *     description="Get all draft orders (carts) with their items for the authenticated customer",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cart fetched successfully."),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
+     *                 @OA\Property(property="order_id", type="integer"),
+     *                 @OA\Property(property="order_number", type="string"),
+     *                 @OA\Property(property="type", type="string"),
+     *                 @OA\Property(property="count_product", type="integer"),
+     *                 @OA\Property(property="total_price", type="number"),
+     *                 @OA\Property(property="order_detail", type="array", @OA\Items(type="object"))
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function fetchCart(Request $request)
     {
 //        // Lấy thông tin user từ Firebase Token
