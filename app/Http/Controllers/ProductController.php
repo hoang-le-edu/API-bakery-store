@@ -11,7 +11,29 @@ use Illuminate\Support\Facades\Storage;
 class ProductController extends BaseController
 {
     /**
-     * Display a listing of the products.
+     * @OA\Get(
+     *     path="/api/admin/products/all",
+     *     tags={"Products"},
+     *     summary="Get all products (Admin)",
+     *     description="Get all products with categories for admin panel",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="page_size",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Products retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -110,6 +132,59 @@ class ProductController extends BaseController
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/customer/products/all",
+     *     tags={"Products"},
+     *     summary="Get products for customers",
+     *     description="Get all active products with categories for customer view",
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="Filter by category ID",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="searchText",
+     *         in="query",
+     *         description="Search keyword",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="min_price",
+     *         in="query",
+     *         description="Minimum price filter",
+     *         required=false,
+     *         @OA\Schema(type="number")
+     *     ),
+     *     @OA\Parameter(
+     *         name="max_price",
+     *         in="query",
+     *         description="Maximum price filter",
+     *         required=false,
+     *         @OA\Schema(type="number")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page_size",
+     *         in="query",
+     *         description="Number of items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Products retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="products_count", type="integer"),
+     *             @OA\Property(property="pagination", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function getProducts(Request $request, $category = null): JsonResponse
     {
 //        return response()->json([
@@ -251,6 +326,38 @@ class ProductController extends BaseController
         ], 200);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/customer/product/{id}",
+     *     tags={"Products"},
+     *     summary="Get product detail for customer",
+     *     description="Get detailed information of a specific product including toppings and sizes",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Product ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product detail retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="price", type="number"),
+     *                 @OA\Property(property="topping_list", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="size_list", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="image_url", type="string"),
+     *                 @OA\Property(property="productDetailImages", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function getProductDetail(string $id)
     {
         $product = Product::findOrFail($id);
