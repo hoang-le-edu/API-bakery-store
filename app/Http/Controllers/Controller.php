@@ -19,7 +19,17 @@ use Illuminate\Routing\Controller as BaseController;
  * 
  * @OA\Server(
  *     url=L5_SWAGGER_CONST_HOST,
- *     description="API Server"
+ *     description="API Server (Auto-detected from APP_URL)"
+ * )
+ * 
+ * @OA\Server(
+ *     url="https://api-bakery-store-mobile-btfrg4gqevhveyfy.eastasia-01.azurewebsites.net",
+ *     description="Production Server (Azure)"
+ * )
+ * 
+ * @OA\Server(
+ *     url="http://localhost:8000",
+ *     description="Local Development Server"
  * )
  * 
  * @OA\SecurityScheme(
