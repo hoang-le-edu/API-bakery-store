@@ -888,6 +888,43 @@ class AuthenticationController extends BaseController
         return $this->sendResponse($user, 'Custom token set successfully.');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/getCustomToken",
+     *     summary="Get Firebase custom token for admin users",
+     *     description="Generate a new Firebase custom token for admin users. This token can be exchanged for an ID token via Firebase Authentication API.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"firebase_uid"},
+     *             @OA\Property(property="firebase_uid", type="string", example="PbviNczyrEgGIP4jPZiB4G5ICJz1", description="Firebase UID of the admin user")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Custom token generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="custom_token", type="string", example="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...", description="Firebase custom token that can be exchanged for ID token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - User not found or not admin",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthorized or User not found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Firebase token generation failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Failed to generate custom token")
+     *         )
+     *     )
+     * )
+     */
     public function getCustomTokenForAdmin(Request $request): JsonResponse
     {
         try {
@@ -1012,5 +1049,159 @@ class AuthenticationController extends BaseController
         }
 
         return $this->sendResponse($user, 'Admin created successfully.');
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/firebase/signInWithCustomToken",
+     *     summary="[Proxy] Firebase: Exchange Custom Token for ID Token",
+     *     description="**Backend proxy to Firebase API.** Exchange the custom token (from /api/auth/getCustomToken) for a Firebase ID token. The backend forwards your request to Firebase: `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken`. You can test this directly in Swagger UI.",
+     *     tags={"Authentication"},
+     *     externalDocs={"description": "Firebase Auth REST API", "url": "https://firebase.google.com/docs/reference/rest/auth#section-sign-in-with-custom-token"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"token", "returnSecureToken"},
+     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...", description="Custom token from /api/auth/getCustomToken"),
+     *             @OA\Property(property="returnSecureToken", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully exchanged for ID token",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="idToken", type="string", example="eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...", description="Use this as Bearer token for API calls"),
+     *             @OA\Property(property="refreshToken", type="string", example="..."),
+     *             @OA\Property(property="expiresIn", type="string", example="3600")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid custom token",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="object",
+     *                 @OA\Property(property="code", type="integer", example=400),
+     *                 @OA\Property(property="message", type="string", example="INVALID_CUSTOM_TOKEN")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function firebaseSignInWithCustomTokenDocumentation(Request $request)
+    {
+        try {
+            // Proxy to Firebase API
+            $firebaseApiKey = env('VITE_FIREBASE_API_KEY');
+            
+            if (empty($firebaseApiKey)) {
+                return response()->json([
+                    'error' => 'Firebase API key not configured',
+                    'note' => 'Set VITE_FIREBASE_API_KEY in .env'
+                ], 500);
+            }
+
+            $validated = $request->validate([
+                'token' => 'required|string',
+                'returnSecureToken' => 'required|boolean',
+            ]);
+
+            // Call Firebase API
+            $response = Http::post(
+                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={$firebaseApiKey}",
+                $validated
+            );
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json($response->json(), $response->status());
+
+        } catch (\Exception $e) {
+            Log::error('Firebase signInWithCustomToken proxy failed: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to authenticate with Firebase',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/firebase/signInWithPassword",
+     *     summary="[Proxy] Firebase: Sign In with Email & Password",
+     *     description="**Backend proxy to Firebase API.** Sign in with email/password to get Firebase ID token. The backend forwards your request to Firebase: `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword`. You can test this directly in Swagger UI.",
+     *     tags={"Authentication"},
+     *     externalDocs={"description": "Firebase Auth REST API", "url": "https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "password", "returnSecureToken"},
+     *             @OA\Property(property="email", type="string", format="email", example="tom@gmail.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="12345678"),
+     *             @OA\Property(property="returnSecureToken", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully signed in",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="idToken", type="string", example="eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...", description="Use this as Bearer token for API calls"),
+     *             @OA\Property(property="email", type="string", example="tom@gmail.com"),
+     *             @OA\Property(property="refreshToken", type="string", example="..."),
+     *             @OA\Property(property="expiresIn", type="string", example="3600"),
+     *             @OA\Property(property="localId", type="string", example="PbviNczyrEgGIP4jPZiB4G5ICJz1", description="Firebase UID")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="object",
+     *                 @OA\Property(property="code", type="integer", example=400),
+     *                 @OA\Property(property="message", type="string", example="INVALID_PASSWORD")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function firebaseSignInWithPasswordDocumentation(Request $request)
+    {
+        try {
+            // Proxy to Firebase API
+            $firebaseApiKey = env('VITE_FIREBASE_API_KEY');
+            
+            if (empty($firebaseApiKey)) {
+                return response()->json([
+                    'error' => 'Firebase API key not configured',
+                    'note' => 'Set VITE_FIREBASE_API_KEY in .env'
+                ], 500);
+            }
+
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+                'returnSecureToken' => 'required|boolean',
+            ]);
+
+            // Call Firebase API
+            $response = Http::post(
+                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={$firebaseApiKey}",
+                $validated
+            );
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json($response->json(), $response->status());
+
+        } catch (\Exception $e) {
+            Log::error('Firebase signInWithPassword proxy failed: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to authenticate with Firebase',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
