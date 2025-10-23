@@ -158,6 +158,10 @@ Route::post('/auth/setCustomTokenForAdmin', [AuthenticationController::class, 's
 Route::post('/auth/addAdmin', [AuthenticationController::class, 'addAdmin']);
 Route::post('/auth/getCustomToken', [AuthenticationController::class, 'getCustomTokenForAdmin']);
 
+// Firebase external API documentation endpoints (for Swagger UI reference only)
+Route::post('/firebase/signInWithCustomToken', [AuthenticationController::class, 'firebaseSignInWithCustomTokenDocumentation']);
+Route::post('/firebase/signInWithPassword', [AuthenticationController::class, 'firebaseSignInWithPasswordDocumentation']);
+
 // ping-200
 Route::get('ping-200-out', fn() => response()->json(['ok'=>true]));
 
