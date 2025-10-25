@@ -7,7 +7,7 @@ import {getCategories} from "../../redux/action/categoryAction.js";
 import {getAllProducts} from "../../redux/action/productAction.js";
 import ButtonElement from "../../components/element/ButtonElement.jsx";
 import debounce from "lodash/debounce";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import Marketing from "./models/Marketing.jsx";
 import {useTranslation} from "react-i18next";

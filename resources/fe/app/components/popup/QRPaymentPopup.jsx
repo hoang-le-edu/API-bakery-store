@@ -2,7 +2,7 @@ import {useEffect} from "react";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import io from "socket.io-client";
 import {formatVietnameseCurrency} from "../../locales/currencyFormat.js";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {useNavigate} from "react-router-dom";
 import {getAllOrders} from "../../redux/action/orderAction.js";
 import {useDispatch} from "react-redux";

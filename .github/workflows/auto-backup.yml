@@ -1,0 +1,103 @@
+name: Auto Backup (open PR to production_backup)
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+concurrency:
+  group: "backup-${{ github.run_id }}"
+  cancel-in-progress: false
+
+jobs:
+  open-backup-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # push ci branch
+      pull-requests: write     # open/update PR
+
+    steps:
+      - name: Checkout default branch (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set git identity
+        run: |
+          git config user.name "ci-promote-bot"
+          git config user.email "ci-promote-bot@users.noreply.github.com"
+
+      - name: Fetch all remote branches
+        run: |
+          # Update remote-tracking refs only (do NOT overwrite local branches)
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Prepare backup branch from production (force mirror, no merge)
+        run: |
+          set -e
+          git fetch --no-tags --prune origin "+refs/heads/*:refs/remotes/origin/*"
+          git update-ref -d refs/heads/ci/backup || true
+          git checkout --detach refs/remotes/origin/production
+          git checkout -B ci/backup
+          git reset --hard refs/remotes/origin/production
+
+      - name: Push ci/backup
+        run: |
+          set -e
+          git push origin ci/backup --force-with-lease
+
+      - name: Create/merge PR to production_backup (ci/backup → production_backup)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -e
+
+          # Skip if no differences between production_backup and ci/backup
+          COMMITS_AHEAD=$(git rev-list --right-only --count refs/remotes/origin/production_backup...ci/backup || echo 0)
+          if [ "$COMMITS_AHEAD" -eq 0 ]; then
+            echo "No changes to backup (ci/backup vs origin/production_backup). Skipping."
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base production_backup \
+            --head ci/backup \
+            --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base production_backup \
+              --head ci/backup \
+              --title "Auto backup: production → production_backup" \
+              --body "Auto-created after a successful promote workflow."
+
+            PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base production_backup \
+              --head ci/backup \
+              --json number --jq '.[0].number')
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR could be found or created for ci/backup → production_backup"
+            exit 1
+          fi
+
+          MERGE_METHOD=$(gh repo view "$GITHUB_REPOSITORY" --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed --jq 'if .mergeCommitAllowed then "merge" else if .squashMergeAllowed then "squash" else if .rebaseMergeAllowed then "rebase" else "none" end end end')
+          if [ "$MERGE_METHOD" = "none" ]; then
+            echo "No merge methods are allowed on this repository."
+            exit 1
+          fi
+
+          if gh pr merge "$PR_NUMBER" --${MERGE_METHOD} --repo "$GITHUB_REPOSITORY"; then
+            # Delete source branch after successful merge
+            git push origin :ci/backup || true
+          else
+            echo "Backup merge not possible now (checks/reviews/policies)."
+            exit 0
+          fi

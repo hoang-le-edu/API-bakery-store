@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {doSignOut} from "../../modules/firebase/auth.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {useTranslation} from "react-i18next";
-import {notify} from "../Notification/notify.jsx";
+import {notify} from "../notification/notify.jsx";
 
 const UserSetting = ({isVisible}) => {
     const navigate = useNavigate();
