@@ -28,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
             Carbon::useTestNow(); // Optionally set a default time for testing
             Carbon::setToStringFormat('Y-m-d H:i:s'); // Example format
         });
+
+        // Force HTTPS in production (Azure, AWS, etc.)
+        if ($this->app->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
+            \URL::forceScheme('https');
+        }
     }
 }

@@ -2,7 +2,7 @@ import {useRef} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {userRegister} from '../../redux/action/userAction.js';
 import SpinnerLoading from '../loading/SpinnerLoading.jsx';
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {doSignOut} from "../../modules/firebase/auth.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {useTranslation} from "react-i18next";

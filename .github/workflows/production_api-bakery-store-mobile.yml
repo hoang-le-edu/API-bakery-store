@@ -43,7 +43,37 @@ jobs:
         run: |
           composer validate --no-check-publish
           composer install --prefer-dist --no-progress --no-interaction
+      
+       # Node/Vite build
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install FE deps & build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: |
+          npm ci
+          npm run build
+          # xóa file hot để tránh trỏ vào Vite dev server
+          rm -f public/hot
+          # kiểm tra manifest tồn tại
+          test -f public/build/manifest.json
 
+      - name: Prepare Laravel writable dirs
+        run: |
+          mkdir -p storage/framework/{views,cache/data,sessions}
+          mkdir -p bootstrap/cache    
+          
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:

@@ -1,4 +1,3 @@
-# config
 /.phpunit.cache
 /vendor
 .env
@@ -14,16 +13,30 @@ yarn-error.log
 /.idea
 /.vscode
 /composer.lock
-/package-lock.json
-vite.config.js
 
 /node_modules
 
-# fe
-/resources/fe/app/modules
-/resources/views
+/storage/firebase/service-account.json
 
+# Documentation files (exclude README.md)
+*.md
+!README.md
 
+# Temporary/sensitive docs
+*_GUIDE.md
+*_CHECKLIST.md
+*_TODO.md
+*_SUMMARY.md
+DEPLOY*.md
+FIX*.md
 
+# Firebase certificates and keys
+/storage/certs/
+*.pem
+*.p12
+*service-account*.json
+*firebase-adminsdk*.json
 
-
+# Environment-specific configs
+.env.*
+!.env.example

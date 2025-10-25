@@ -328,6 +328,48 @@ class OrderController extends Controller
         }
 
     }
+    
+    /**
+     * @OA\Post(
+     *     path="/api/orders/proceed",
+     *     summary="Proceed with order checkout",
+     *     description="Finalize order with shipping details, payment method, and vouchers. Requires Firebase authentication.",
+     *     tags={"Orders"},
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id", "receiver_name", "receiver_address", "payment_method", "province", "district", "ward", "street", "phone_number", "shipping_fee"},
+     *             @OA\Property(property="order_id", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174000"),
+     *             @OA\Property(property="receiver_name", type="string", example="Nguyen Van A"),
+     *             @OA\Property(property="receiver_address", type="string", example="123 Nguyen Hue, District 1"),
+     *             @OA\Property(property="payment_method", type="string", enum={"Banking", "Cash"}, example="Banking"),
+     *             @OA\Property(property="voucher", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174001"),
+     *             @OA\Property(property="voucher_shipping", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174002"),
+     *             @OA\Property(property="note", type="string", example="Giao sau 5h"),
+     *             @OA\Property(property="province", type="string", example="Ho Chi Minh"),
+     *             @OA\Property(property="district", type="string", example="District 1"),
+     *             @OA\Property(property="ward", type="string", example="Ben Nghe"),
+     *             @OA\Property(property="street", type="string", example="123 Nguyen Hue"),
+     *             @OA\Property(property="phone_number", type="string", example="0901234567"),
+     *             @OA\Property(property="shipping_fee", type="number", example=25000),
+     *             @OA\Property(property="discount_number", type="number", example=10000),
+     *             @OA\Property(property="order_total", type="number", example=150000)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order proceeded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order proceeded successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden - Order does not belong to customer"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function proceedOrder(Request $request)
     {
         $validated = $request->validate([
@@ -409,6 +451,33 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/customer/markReceived",
+     *     summary="Mark order as received by customer",
+     *     description="Customer marks order as completed/delivered. Requires Firebase authentication.",
+     *     tags={"Orders"},
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id"},
+     *             @OA\Property(property="order_id", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174000")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order marked as delivered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order marked as delivered successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden - Order does not belong to customer"),
+     *     @OA\Response(response=404, description="Customer or Order not found")
+     * )
+     */
     function markReceived(Request $request) {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
@@ -443,6 +512,35 @@ class OrderController extends Controller
             'data' => $order,
         ]);
     }
+    /**
+     * @OA\Post(
+     *     path="/api/customer/giveFeedback",
+     *     summary="Give feedback and rating for completed order",
+     *     description="Customer provides rating (1-5 stars) and feedback for their order. Requires Firebase authentication.",
+     *     tags={"Orders"},
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id", "rate"},
+     *             @OA\Property(property="order_id", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174000"),
+     *             @OA\Property(property="rate", type="integer", minimum=1, maximum=5, example=5),
+     *             @OA\Property(property="customer_feedback", type="string", example="Sản phẩm rất ngon!")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Feedback submitted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Feedback submitted successfully."),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden - Order does not belong to customer"),
+     *     @OA\Response(response=404, description="Customer or Order not found")
+     * )
+     */
     function giveFeedback(Request $request) {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
@@ -521,6 +619,40 @@ class OrderController extends Controller
         }
         return $totalDiscount;
     }
+    /**
+     * @OA\Post(
+     *     path="/api/cart/addProductToCart",
+     *     tags={"Cart"},
+     *     summary="Add product to cart",
+     *     description="Add a product with optional toppings to one or multiple shopping carts",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product"},
+     *             @OA\Property(property="product", type="object",
+     *                 @OA\Property(property="product_id", type="integer"),
+     *                 @OA\Property(property="size", type="string", example="M"),
+     *                 @OA\Property(property="quantity", type="integer", example=1),
+     *                 @OA\Property(property="toppings_id", type="array", @OA\Items(type="integer")),
+     *                 @OA\Property(property="note", type="string"),
+     *                 @OA\Property(property="total_price", type="number")
+     *             ),
+     *             @OA\Property(property="order_ids", type="array", @OA\Items(type="integer"), description="Array of order IDs to add product to")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product added to cart successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product or Customer not found")
+     * )
+     */
     public function addProductToCart(Request $request)
     {
 //        return response()->json([
@@ -772,6 +904,32 @@ class OrderController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/cart/fetchCart",
+     *     tags={"Cart"},
+     *     summary="Fetch user's shopping cart",
+     *     description="Get all draft orders (carts) with their items for the authenticated customer",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cart fetched successfully."),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
+     *                 @OA\Property(property="order_id", type="integer"),
+     *                 @OA\Property(property="order_number", type="string"),
+     *                 @OA\Property(property="type", type="string"),
+     *                 @OA\Property(property="count_product", type="integer"),
+     *                 @OA\Property(property="total_price", type="number"),
+     *                 @OA\Property(property="order_detail", type="array", @OA\Items(type="object"))
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function fetchCart(Request $request)
     {
 //        // Lấy thông tin user từ Firebase Token
@@ -1093,6 +1251,32 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Topping removed from cart successfully.']);
     }
+    /**
+     * @OA\Post(
+     *     path="/api/customer/cancelOrder",
+     *     summary="Cancel an order",
+     *     description="Customer cancels their order. Requires Firebase authentication.",
+     *     tags={"Orders"},
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id"},
+     *             @OA\Property(property="order_id", type="string", format="uuid", example="123e4567-e89b-12d3-a456-426614174000")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order cancelled successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order cancelled successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden - Order does not belong to customer"),
+     *     @OA\Response(response=404, description="Customer or Order not found")
+     * )
+     */
     public function cancelOrder(Request $request) {
         $validated = $request->validate([
             'order_id' => 'required | exists:orders,id',
@@ -1197,6 +1381,39 @@ class OrderController extends Controller
         return response()->json(['message' => 'Order updated successfully . ', 'data' => $order]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/orders/status/{id}",
+     *     summary="Update order status (Admin/Staff)",
+     *     description="Update the status of an order. Requires Firebase authentication.",
+     *     tags={"Orders"},
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_status"},
+     *             @OA\Property(property="order_status", type="string", enum={"Wait For Approval", "In Progress", "Delivering", "Delivered", "Completed", "Cancelled"}, example="In Progress")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order status updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order updated successfully . "),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Order not found")
+     * )
+     */
     public function updateStatus(Request $request, string $id)
     {
         $validated = $request->validate([

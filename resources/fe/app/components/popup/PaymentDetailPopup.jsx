@@ -5,7 +5,7 @@ import connectApi from "../../../settings/ConnectApi.js";
 import {createPaymentLink, fetchDistricts, fetchWards, resetPaymentLink} from "../../redux/action/paymentAction.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import {useNavigate} from "react-router-dom";
 import provinceJson from "../../locales/tinh_tp.json";
 import {useTranslation} from "react-i18next";

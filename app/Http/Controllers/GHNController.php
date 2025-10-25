@@ -16,6 +16,28 @@ class GHNController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
 
+    /**
+     * @OA\Get(
+     *     path="/api/ghn/provinces",
+     *     tags={"Shipping"},
+     *     summary="Get provinces list",
+     *     description="Get all provinces from GHN API for shipping address",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Provinces retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="code", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Success"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
+     *                 @OA\Property(property="ProvinceID", type="integer"),
+     *                 @OA\Property(property="ProvinceName", type="string")
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(response=500, description="GHN API Error")
+     * )
+     */
     public function getProvinces(Request $request): \Illuminate\Http\JsonResponse
     {
         // GHN API endpoint
@@ -51,6 +73,33 @@ class GHNController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/ghn/districts",
+     *     tags={"Shipping"},
+     *     summary="Get districts list",
+     *     description="Get districts by province ID from GHN API",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="province_id",
+     *         in="query",
+     *         description="Province ID from GHN",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=202)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Districts retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="code", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Success"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation Error"),
+     *     @OA\Response(response=500, description="GHN API Error")
+     * )
+     */
     public function getDistricts(Request $request)
     {
         // Validate the request
@@ -93,6 +142,33 @@ class GHNController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/ghn/wards",
+     *     tags={"Shipping"},
+     *     summary="Get wards list",
+     *     description="Get wards by district ID from GHN API",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="district_id",
+     *         in="query",
+     *         description="District ID from GHN",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1542)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Wards retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="code", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Success"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation Error"),
+     *     @OA\Response(response=500, description="GHN API Error")
+     * )
+     */
     public function getWards(Request $request)
     {
         // Validate the request
@@ -133,6 +209,56 @@ class GHNController extends Controller
             ], 500);
         }
     }
+    /**
+     * @OA\Get(
+     *     path="/api/ghn/shipping-fee",
+     *     tags={"Shipping"},
+     *     summary="Calculate shipping fee",
+     *     description="Calculate shipping fee from GHN based on destination",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="team_id",
+     *         in="query",
+     *         description="Team/Branch ID (from location)",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_district_id",
+     *         in="query",
+     *         description="Destination District ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_ward_code",
+     *         in="query",
+     *         description="Destination Ward Code",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="insurance_value",
+     *         in="query",
+     *         description="Order value for insurance",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Shipping fee calculated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="code", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Success"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="total", type="integer", example=50000)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation Error"),
+     *     @OA\Response(response=500, description="GHN API Error")
+     * )
+     */
     public function getShippingFee(Request $request)
     {
         $request->validate([

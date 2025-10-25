@@ -1,0 +1,1 @@
+import{j as t,S as a}from"./index-CKXF_vCW.js";const m=({style:n,action:e,title:o,loading:s,value:r=""})=>t.jsx("button",{className:n,onClick:e,disabled:s,value:r,children:s?t.jsx(a,{}):`${o}`});export{m as B};
