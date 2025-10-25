@@ -18,6 +18,25 @@ yarn-error.log
 
 /storage/firebase/service-account.json
 
+# Documentation files (exclude README.md)
+*.md
+!README.md
 
+# Temporary/sensitive docs
+*_GUIDE.md
+*_CHECKLIST.md
+*_TODO.md
+*_SUMMARY.md
+DEPLOY*.md
+FIX*.md
 
+# Firebase certificates and keys
+/storage/certs/
+*.pem
+*.p12
+*service-account*.json
+*firebase-adminsdk*.json
 
+# Environment-specific configs
+.env.*
+!.env.example
