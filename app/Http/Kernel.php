@@ -37,6 +37,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\ApplicationInsightsMiddleware::class,
         ],
         'api' => [
             'throttle:api',
@@ -45,6 +46,7 @@ class Kernel extends HttpKernel
             // \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\CorsMiddleware::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\ApplicationInsightsMiddleware::class,
 
         ],
         'public_api' => [
@@ -52,6 +54,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             // \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\CorsMiddleware::class,
+            \App\Http\Middleware\ApplicationInsightsMiddleware::class,
         ],
     ];
 

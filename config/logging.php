@@ -54,7 +54,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => ['single', 'application_insights'],
             'ignore_exceptions' => false,
         ],
 
@@ -125,6 +125,21 @@ return [
 
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
+        ],
+
+        /**
+         * Azure Application Insights Channel
+         * 
+         * Sends logs, exceptions, and telemetry to Azure Application Insights
+         * Connection string format: InstrumentationKey=xxx;IngestionEndpoint=xxx;...
+         * 
+         * Set APP_INSIGHT_KEY in .env file or Azure App Settings
+         */
+        'application_insights' => [
+            'driver' => 'custom',
+            'via' => \App\Logging\CreateApplicationInsightsLogger::class,
+            'connection_string' => env('APP_INSIGHT_KEY'),
+            'level' => env('LOG_LEVEL', 'debug'),
         ],
     ],
 
