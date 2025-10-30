@@ -38,6 +38,29 @@ class CategoryController extends Controller
 
         return $categories;
     }
+    /**
+     * @OA\Get(
+     *     path="/api/categories/options/all",
+     *     tags={"Categories"},
+     *     summary="Get all categories (Public)",
+     *     description="Get all categories visible to customers",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="type", type="string", enum={"Food","Drink","Topping"}),
+     *                 @OA\Property(property="priority", type="integer"),
+     *                 @OA\Property(property="image_path", type="string")
+     *             ))
+     *         )
+     *     )
+     * )
+     */
     public function getCategoryJson(): JsonResponse
     {
         $categories = $this->getCategories();
@@ -48,7 +71,32 @@ class CategoryController extends Controller
         ], 200);
     }
     /**
-     * Store a newly created category in storage.
+     * @OA\Post(
+     *     path="/api/admin/categories/add",
+     *     tags={"Categories"},
+     *     summary="Create new category (Admin)",
+     *     description="Create a new category",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","type"},
+     *             @OA\Property(property="name", type="string", example="Beverages"),
+     *             @OA\Property(property="description", type="string", example="All kinds of drinks"),
+     *             @OA\Property(property="type", type="string", enum={"Food","Drink","Topping"}, example="Drink")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Category created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
      */
     public function store(Request $request)
     {
@@ -127,6 +175,24 @@ class CategoryController extends Controller
         return response()->json(['message' => 'Category permanently deleted.']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/admin/categories/all",
+     *     tags={"Categories"},
+     *     summary="Get all categories (Admin)",
+     *     description="Get all categories including hidden ones for admin panel",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
+     */
     public function adminGetCategories(): JsonResponse
     {
         $categories = Category::all();

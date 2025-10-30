@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 import SpinnerLoading from '../../../components/loading/SpinnerLoading.jsx';
 import {doSignInWithCustomToken, doSignInWithEmailAndPassword} from "../../../modules/firebase/auth.js";
-import {notify} from "../../../layouts/Notification/notify.jsx";
+import {notify} from "../../../layouts/notification/notify.jsx";
 import axios from 'axios';
 import {useNavigate} from "react-router-dom";
 

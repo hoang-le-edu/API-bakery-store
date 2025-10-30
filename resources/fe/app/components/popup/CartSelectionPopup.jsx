@@ -4,7 +4,7 @@ import {formatVietnameseCurrency} from '../../locales/currencyFormat.js';
 import {addProductToCart} from "../../redux/action/cartAction.js";
 import {usePopup} from "../../hooks/contexts/popupContext/popupState.jsx";
 import {formatDate} from "../../locales/dateFormat.js";
-import {notify} from "../../layouts/Notification/notify.jsx";
+import {notify} from "../../layouts/notification/notify.jsx";
 import SpinnerLoading from "../loading/SpinnerLoading.jsx";
 
 const CartSelectionPopup = ({isVisible, cartData, product, resetState}) => {
