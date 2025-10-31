@@ -1,13 +1,13 @@
 {
-  "_ButtonElement-Nmw8fUwO.js": {
-    "file": "assets/ButtonElement-Nmw8fUwO.js",
+  "_ButtonElement-D6rrdmjX.js": {
+    "file": "assets/ButtonElement-D6rrdmjX.js",
     "name": "ButtonElement",
     "imports": [
       "resources/fe/index.jsx"
     ]
   },
-  "_categoryAction-B9w67bzo.js": {
-    "file": "assets/categoryAction-B9w67bzo.js",
+  "_categoryAction-BzFgiwP6.js": {
+    "file": "assets/categoryAction-BzFgiwP6.js",
     "name": "categoryAction",
     "imports": [
       "resources/fe/index.jsx"
@@ -54,7 +54,7 @@
     "src": "resources/fe/app/assets/marketing/menu.png"
   },
   "resources/fe/app/pages/About/index.jsx": {
-    "file": "assets/index-D5WNrsne.js",
+    "file": "assets/index-oXme9yx5.js",
     "name": "index",
     "src": "resources/fe/app/pages/About/index.jsx",
     "isDynamicEntry": true,
@@ -63,7 +63,7 @@
     ]
   },
   "resources/fe/app/pages/Admin/Authentication/Login.jsx": {
-    "file": "assets/Login-CHZNyeDV.js",
+    "file": "assets/Login-D_D2Nhus.js",
     "name": "Login",
     "src": "resources/fe/app/pages/Admin/Authentication/Login.jsx",
     "isDynamicEntry": true,
@@ -72,19 +72,19 @@
     ]
   },
   "resources/fe/app/pages/Admin/Categories/CategoriesCRUD.jsx": {
-    "file": "assets/CategoriesCRUD-D8SylVXg.js",
+    "file": "assets/CategoriesCRUD-jdClHsUP.js",
     "name": "CategoriesCRUD",
     "src": "resources/fe/app/pages/Admin/Categories/CategoriesCRUD.jsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/fe/index.jsx",
       "_index.esm-DNKXbXUI.js",
-      "_categoryAction-B9w67bzo.js",
+      "_categoryAction-BzFgiwP6.js",
       "_index-Dj9kkSsk.js"
     ]
   },
   "resources/fe/app/pages/Admin/Orders/OrderCRUD.jsx": {
-    "file": "assets/OrderCRUD-BOSXguiK.js",
+    "file": "assets/OrderCRUD-CNXmGHLZ.js",
     "name": "OrderCRUD",
     "src": "resources/fe/app/pages/Admin/Orders/OrderCRUD.jsx",
     "isDynamicEntry": true,
@@ -94,24 +94,24 @@
     ]
   },
   "resources/fe/app/pages/Admin/Products/ProductCRUD.jsx": {
-    "file": "assets/ProductCRUD-CjHGUyJr.js",
+    "file": "assets/ProductCRUD--IQM1_Yq.js",
     "name": "ProductCRUD",
     "src": "resources/fe/app/pages/Admin/Products/ProductCRUD.jsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/fe/index.jsx",
       "_index.esm-DNKXbXUI.js",
-      "_categoryAction-B9w67bzo.js"
+      "_categoryAction-BzFgiwP6.js"
     ]
   },
   "resources/fe/app/pages/Home/index.jsx": {
-    "file": "assets/index-Z-6MdhCu.js",
+    "file": "assets/index-MptMtj0q.js",
     "name": "index",
     "src": "resources/fe/app/pages/Home/index.jsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/fe/index.jsx",
-      "_ButtonElement-Nmw8fUwO.js"
+      "_ButtonElement-D6rrdmjX.js"
     ],
     "assets": [
       "assets/1-CWEzcyVl.png",
@@ -124,21 +124,21 @@
     ]
   },
   "resources/fe/app/pages/Menu/index.jsx": {
-    "file": "assets/index-L32wXHr7.js",
+    "file": "assets/index-DoUSgFvE.js",
     "name": "index",
     "src": "resources/fe/app/pages/Menu/index.jsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/fe/index.jsx",
-      "_categoryAction-B9w67bzo.js",
-      "_ButtonElement-Nmw8fUwO.js"
+      "_categoryAction-BzFgiwP6.js",
+      "_ButtonElement-D6rrdmjX.js"
     ],
     "assets": [
       "assets/menu-CT0EItRe.png"
     ]
   },
   "resources/fe/app/pages/Order/index.jsx": {
-    "file": "assets/index-RoDkoQPK.js",
+    "file": "assets/index-DOPq-UZG.js",
     "name": "index",
     "src": "resources/fe/app/pages/Order/index.jsx",
     "isDynamicEntry": true,
@@ -147,7 +147,7 @@
     ]
   },
   "resources/fe/index.jsx": {
-    "file": "assets/index-CKXF_vCW.js",
+    "file": "assets/index-B0SyEzGp.js",
     "name": "index",
     "src": "resources/fe/index.jsx",
     "isEntry": true,

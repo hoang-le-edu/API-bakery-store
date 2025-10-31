@@ -1,1 +1,0 @@
-import{j as s}from"./index-CKXF_vCW.js";const t=()=>s.jsx("section",{children:s.jsx("div",{className:"container mx-auto px-2",children:s.jsx("div",{className:"py-10 text-sm ",children:s.jsx("div",{children:"Home / About"})})})});export{t as default};
