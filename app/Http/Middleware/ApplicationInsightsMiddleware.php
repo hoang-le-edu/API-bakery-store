@@ -22,8 +22,9 @@ class ApplicationInsightsMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip if no connection string configured
-        if (empty(env('APP_INSIGHT_KEY'))) {
+        // Skip if no connection string configured (support both env variable names)
+        $connectionString = env('APPLICATIONINSIGHTS_CONNECTION_STRING') ?? env('APP_INSIGHT_KEY');
+        if (empty($connectionString)) {
             return $next($request);
         }
 
@@ -76,7 +77,8 @@ class ApplicationInsightsMiddleware
         bool $success
     ): void {
         try {
-            $connectionString = env('APP_INSIGHT_KEY');
+            // Support both Azure standard and legacy env variable names
+            $connectionString = env('APPLICATIONINSIGHTS_CONNECTION_STRING') ?? env('APP_INSIGHT_KEY');
             $config = $this->parseConnectionString($connectionString);
             
             $telemetry = [
