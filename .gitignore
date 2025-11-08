@@ -12,7 +12,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-/composer.lock
+
 
 /node_modules
 
