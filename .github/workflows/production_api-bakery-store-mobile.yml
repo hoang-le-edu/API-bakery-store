@@ -1,4 +1,4 @@
-name: Build and deploy PHP app to Azure Web App - api-bakery-store-mobile
+name: Build and deploy PHP app to Azure Web App - api-cloud
 
 on:
   push:
@@ -96,9 +96,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.__clientidsecretname__ }}
-          tenant-id: ${{ secrets.__tenantidsecretname__ }}
-          subscription-id: ${{ secrets.__subscriptionidsecretname__ }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_35CD63992FC8470A9AB0F5F7F9DD84A7 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_302842A607464B37945A0583C3911BA4 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C65585F4246047FE8F2F7BEC7D710A5A }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
