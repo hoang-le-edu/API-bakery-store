@@ -15,12 +15,13 @@ class DatabaseSeeder extends Seeder
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-//        $this->call(TeamSeeder::class);
-//        $this->call(PermissionSeeder::class);
-//        $this->call(RoleSeeder::class);
+        //        $this->call(TeamSeeder::class);
+        //        $this->call(PermissionSeeder::class);
+        //        $this->call(RoleSeeder::class);
         $this->call(AdminSeeder::class);
+        $this->call(ProductSeeder::class);
+        $this->call(CategorySeeder::class);
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
     }
 }
