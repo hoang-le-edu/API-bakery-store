@@ -946,36 +946,52 @@ class AuthenticationController extends BaseController
 
             // ✅ Generate NEW custom token every time instead of using old one from DB
             try {
-                // Get Firebase credentials from config
-                $credentials = config('firebase.projects.app.credentials');
-                
-                if (empty($credentials)) {
-                    throw new \Exception('Firebase credentials not configured. Please set FIREBASE_CREDENTIALS or FIREBASE_CREDENTIALS_JSON in .env');
-                }
-
                 // Initialize Firebase with proper credentials format
                 $factory = new \Kreait\Firebase\Factory();
-                
-                // Handle different credential formats
-                if (isset($credentials['file']) && !empty($credentials['file'])) {
-                    $filePath = $credentials['file'];
-                    
-                    // Check if path is relative, make it absolute from base_path
-                    if (!str_starts_with($filePath, '/') && !preg_match('/^[A-Z]:/i', $filePath)) {
-                        $filePath = base_path($filePath);
+
+                // Priority 1: Individual environment variables (recommended for production/DigitalOcean)
+                if (env('FIREBASE_CLIENT_EMAIL')) {
+                    $credentials = [
+                        'type' => env('FIREBASE_TYPE', 'service_account'),
+                        'project_id' => env('FIREBASE_PROJECT_ID'),
+                        'private_key_id' => env('FIREBASE_PRIVATE_KEY_ID'),
+                        'private_key' => str_replace('\\n', "\n", env('FIREBASE_PRIVATE_KEY')),
+                        'client_email' => env('FIREBASE_CLIENT_EMAIL'),
+                        'client_id' => env('FIREBASE_CLIENT_ID'),
+                        'auth_uri' => env('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
+                        'token_uri' => env('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token'),
+                        'auth_provider_x509_cert_url' => env('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', 'https://www.googleapis.com/oauth2/v1/certs'),
+                        'client_x509_cert_url' => env('FIREBASE_CLIENT_X509_CERT_URL'),
+                        'universe_domain' => env('FIREBASE_UNIVERSE_DOMAIN', 'googleapis.com'),
+                    ];
+
+                    $factory = $factory->withServiceAccount($credentials);
+                    Log::info('Using Firebase credentials from environment variables');
+                }
+                // Priority 2: File path (for local development only)
+                else {
+                    $credentialsPath = env('FIREBASE_CREDENTIALS', env('GOOGLE_APPLICATION_CREDENTIALS'));
+
+                    if (empty($credentialsPath)) {
+                        throw new \Exception('Firebase credentials not configured. Please set FIREBASE_CLIENT_EMAIL or FIREBASE_CREDENTIALS in .env');
                     }
-                    
+
+                    // Check if it's an absolute path
+                    $filePath = $credentialsPath;
+
+                    // If relative path, convert to absolute from base_path
+                    if (!file_exists($filePath)) {
+                        $filePath = base_path($credentialsPath);
+                    }
+
                     if (!file_exists($filePath)) {
                         throw new \Exception("Firebase credentials file not found: {$filePath}");
                     }
-                    
+
                     $factory = $factory->withServiceAccount($filePath);
-                } elseif (isset($credentials['json']) && is_array($credentials['json'])) {
-                    $factory = $factory->withServiceAccount($credentials['json']);
-                } else {
-                    throw new \Exception('Invalid Firebase credentials format');
+                    Log::info('Using Firebase credentials from file: ' . $filePath);
                 }
-                
+
                 $auth = $factory->createAuth();
 
                 // Create custom token with additional claims (expires in 1 hour by default)
