@@ -45,6 +45,41 @@ class VoucherController extends BaseController
         return response()->json(['message' => 'Voucher created successfully.', 'data' => $voucher], 201);
     }
     /**
+     * @OA\Get(
+     *     path="/api/vouchers/loadCustomerVoucher",
+     *     tags={"Vouchers"},
+     *     summary="Get available vouchers for customer",
+     *     description="Get all active vouchers for a specific branch/team, grouped by apply_type (discount/shipping_fee)",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="team_id",
+     *         in="query",
+     *         required=true,
+     *         description="Team/Branch ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Vouchers retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="discount", type="array", @OA\Items(type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="voucher_code", type="string"),
+     *                     @OA\Property(property="discount_type", type="string", enum={"percent", "fixed"}),
+     *                     @OA\Property(property="discount_amount", type="number"),
+     *                     @OA\Property(property="discount_percent", type="number"),
+     *                     @OA\Property(property="minimum", type="number"),
+     *                     @OA\Property(property="remaining", type="integer")
+     *                 )),
+     *                 @OA\Property(property="shipping_fee", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
      * Load vouchers based on current date and team_id.
      */
     public function loadVouchersByDateAndTeam(Request $request)

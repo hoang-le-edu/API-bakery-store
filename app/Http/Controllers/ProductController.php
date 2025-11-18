@@ -417,6 +417,45 @@ class ProductController extends BaseController
 
     /**
      * Store a newly created product in storage.
+     * @OA\Post(
+     *     path="/api/admin/products/add",
+     *     tags={"Products"},
+     *     summary="Create new product (Admin)",
+     *     description="Create a new product with images, categories, and toppings",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"name", "status", "categories_id[]"},
+     *                 @OA\Property(property="name", type="string", example="Cappuccino"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="thumbnailImage", type="string", format="binary"),
+     *                 @OA\Property(property="productDetailImages[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="status", type="string", enum={"active", "inactive"}),
+     *                 @OA\Property(property="price", type="number", example=45000),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number", example=5000),
+     *                 @OA\Property(property="up_l_price", type="number", example=10000),
+     *                 @OA\Property(property="is_topping", type="boolean", example=false),
+     *                 @OA\Property(property="priority", type="integer", example=1),
+     *                 @OA\Property(property="categories_id[]", type="array", @OA\Items(type="string", format="uuid")),
+     *                 @OA\Property(property="toppings_id[]", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Product created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
      */
     public function store(Request $request)
     {
@@ -597,6 +636,54 @@ class ProductController extends BaseController
     /**
      * Update the specified product in storage.
      */
+    /**
+     * @OA\Post(
+     *     path="/api/admin/products/update/{id}",
+     *     tags={"Products"},
+     *     summary="Update product (Admin)",
+     *     description="Update product details including images, categories, and toppings",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="thumbnailImage", type="string", format="binary"),
+     *                 @OA\Property(property="productDetailImages[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="status", type="string", enum={"active", "inactive"}),
+     *                 @OA\Property(property="price", type="number"),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number"),
+     *                 @OA\Property(property="up_l_price", type="number"),
+     *                 @OA\Property(property="is_topping", type="boolean"),
+     *                 @OA\Property(property="priority", type="integer"),
+     *                 @OA\Property(property="categories_id[]", type="array", @OA\Items(type="string", format="uuid")),
+     *                 @OA\Property(property="toppings_id[]", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product not found"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
+     */
     public function update(Request $request, string $id)
     {
         //        return response()->json([
@@ -766,6 +853,47 @@ class ProductController extends BaseController
         return response()->json(['message' => 'Product permanently deleted.']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/admin/products/{id}",
+     *     tags={"Products"},
+     *     summary="Get product detail (Admin)",
+     *     description="Get detailed product information including images, categories, and toppings for admin panel",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product detail retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="status", type="string"),
+     *                 @OA\Property(property="is_topping", type="boolean"),
+     *                 @OA\Property(property="price", type="number"),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number"),
+     *                 @OA\Property(property="up_l_price", type="number"),
+     *                 @OA\Property(property="priority", type="integer"),
+     *                 @OA\Property(property="categories_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="toppings_id", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="thumbnailImage", type="string"),
+     *                 @OA\Property(property="productDetailImages", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function adminGetProductDetail(Request $request, string $productId): JsonResponse
     {
         //        $toppingList = $product->toppings()

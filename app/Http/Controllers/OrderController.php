@@ -20,6 +20,33 @@ use Twilio\TwiML\Voice\Pay;
 class OrderController extends Controller
 {
     /**
+     * @OA\Get(
+     *     path="/api/admin/orders/all",
+     *     tags={"Orders"},
+     *     summary="Get all orders (Admin)",
+     *     description="Get all orders with customer and creator information for admin panel",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Orders retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Orders fetched successfully."),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="order_number", type="string"),
+     *                 @OA\Property(property="receiver_name", type="string"),
+     *                 @OA\Property(property="receiver_address", type="string"),
+     *                 @OA\Property(property="payment_method", type="string"),
+     *                 @OA\Property(property="order_status", type="string"),
+     *                 @OA\Property(property="order_total", type="number"),
+     *                 @OA\Property(property="created_at", type="string"),
+     *                 @OA\Property(property="customers", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="creator", type="object")
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      * Display a listing of the orders.
      */
     public function index()
@@ -27,6 +54,31 @@ class OrderController extends Controller
         $orders = Order::with(['customers', 'creator'])->get();
         return response()->json(['message' => 'Orders fetched successfully.', 'data' => $orders]);
     }
+    /**
+     * @OA\Delete(
+     *     path="/api/cart/deleteCart/{id}",
+     *     tags={"Cart"},
+     *     summary="Delete entire cart",
+     *     description="Delete a cart (draft order) with all its items and details",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID (cart ID)",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order deleted successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Order not found")
+     * )
+     */
     public function deleteCart($orderId)
     {
         try {
@@ -95,6 +147,31 @@ class OrderController extends Controller
         return response()->json(['message' => 'Cart created successfully.', 'data' => $order]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/loadCustomerOrders",
+     *     tags={"Orders"},
+     *     summary="Get customer order history",
+     *     description="Get all orders (except Draft) for authenticated customer, grouped by status",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Orders fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Orders fetched successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="Wait For Approval", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="In Progress", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="Delivering", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="Completed", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="Cancelled", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function loadCustomerOrders(Request $request)
     {
 //        $currentUser = auth()->user();
@@ -1020,6 +1097,39 @@ class OrderController extends Controller
             'data' => $return_data
         ]);
     }
+    /**
+     * @OA\Put(
+     *     path="/api/cart/updateProductInCart",
+     *     tags={"Cart"},
+     *     summary="Update product in cart",
+     *     description="Update quantity, size, toppings, and note for a product in cart",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id", "order_detail_id", "size", "quantity", "total_price"},
+     *             @OA\Property(property="order_id", type="string", format="uuid"),
+     *             @OA\Property(property="order_detail_id", type="string", format="uuid"),
+     *             @OA\Property(property="size", type="string", example="M"),
+     *             @OA\Property(property="quantity", type="integer", minimum=1, example=2),
+     *             @OA\Property(property="toppings_id", type="array", @OA\Items(type="integer")),
+     *             @OA\Property(property="note", type="string", example="Ít đường"),
+     *             @OA\Property(property="total_price", type="number", example=75000)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Order or Order Detail not found")
+     * )
+     */
     public function updateProductInCart(Request $request)
     {
         $validated = $request->validate([
@@ -1139,6 +1249,33 @@ class OrderController extends Controller
             'data' => $updatedProduct,
         ]);
     }
+    /**
+     * @OA\Post(
+     *     path="/api/cart/removeProductFromCart",
+     *     tags={"Cart"},
+     *     summary="Remove product from cart",
+     *     description="Remove a product (order detail) from shopping cart",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"cart_id", "order_detail_id"},
+     *             @OA\Property(property="cart_id", type="string", format="uuid", description="Order ID (cart ID)"),
+     *             @OA\Property(property="order_detail_id", type="string", format="uuid", description="Order detail ID to remove")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product removed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product removed from cart successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Cart or Product not found")
+     * )
+     */
     public function removeProductFromCart(Request $request)
     {
         $validated = $request->validate([
@@ -1190,6 +1327,34 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Product removed from cart successfully.']);
     }
+    /**
+     * @OA\Post(
+     *     path="/api/cart/removeToppingFromCart",
+     *     tags={"Cart"},
+     *     summary="Remove topping from product in cart",
+     *     description="Remove a specific topping from a product in shopping cart",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"cart_id", "order_detail_id", "topping_id"},
+     *             @OA\Property(property="cart_id", type="string", format="uuid", description="Order ID (cart ID)"),
+     *             @OA\Property(property="order_detail_id", type="string", format="uuid", description="Order detail ID (parent product)"),
+     *             @OA\Property(property="topping_id", type="string", format="uuid", description="Topping ID to remove")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Topping removed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Topping removed from cart successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Cart, Product, or Topping not found")
+     * )
+     */
     public function removeToppingFromCart(Request $request)
     {
         $validated = $request->validate([
@@ -1350,6 +1515,48 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/admin/orders/update/{id}",
+     *     tags={"Orders"},
+     *     summary="Update order (Admin)",
+     *     description="Update order details including status, payment, and customer information",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="order_number", type="string"),
+     *             @OA\Property(property="receiver_name", type="string"),
+     *             @OA\Property(property="receiver_address", type="string"),
+     *             @OA\Property(property="payment_method", type="string", enum={"Banking", "Cash"}),
+     *             @OA\Property(property="payment_status", type="string", enum={"pending", "paid"}),
+     *             @OA\Property(property="order_status", type="string"),
+     *             @OA\Property(property="order_total", type="number"),
+     *             @OA\Property(property="rate", type="integer", minimum=0, maximum=5),
+     *             @OA\Property(property="customer_feedback", type="string"),
+     *             @OA\Property(property="host_id", type="string", format="uuid"),
+     *             @OA\Property(property="source", type="string", enum={"Offline", "Online"}),
+     *             @OA\Property(property="team_id", type="string", format="uuid")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order updated successfully . "),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Order not found"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
      * Update the specified order in storage.
      */
     public function update(Request $request, string $id)

@@ -12,7 +12,11 @@
     "servers": [
         {
             "url": "http://127.0.0.1:8000",
-            "description": "API Server"
+            "description": "API Server (Auto-detected from APP_URL)"
+        },
+        {
+            "url": "https://bepmetayapi-9adx6.ondigitalocean.app",
+            "description": "Production Server"
         }
     ],
     "paths": {
@@ -1453,6 +1457,208 @@
                 ]
             }
         },
+        "/api/admin/orders/all": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get all orders (Admin)",
+                "description": "Get all orders with customer and creator information for admin panel",
+                "operationId": "8d6813ab049edf23c9bab8433ed6a299",
+                "responses": {
+                    "200": {
+                        "description": "Orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Orders fetched successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "order_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "receiver_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "receiver_address": {
+                                                        "type": "string"
+                                                    },
+                                                    "payment_method": {
+                                                        "type": "string"
+                                                    },
+                                                    "order_status": {
+                                                        "type": "string"
+                                                    },
+                                                    "order_total": {
+                                                        "type": "number"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string"
+                                                    },
+                                                    "customers": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "creator": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cart/deleteCart/{id}": {
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Delete entire cart",
+                "description": "Delete a cart (draft order) with all its items and details",
+                "operationId": "dd5c4587980ec62551614cffee72ef70",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID (cart ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cart deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/loadCustomerOrders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get customer order history",
+                "description": "Get all orders (except Draft) for authenticated customer, grouped by status",
+                "operationId": "ab68075656e39984d89d6656deddccd1",
+                "responses": {
+                    "200": {
+                        "description": "Orders fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Orders fetched successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "Wait For Approval": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "In Progress": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "Delivering": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "Completed": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "Cancelled": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Customer not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders/proceed": {
             "post": {
                 "tags": [
@@ -1892,6 +2098,242 @@
                 ]
             }
         },
+        "/api/cart/updateProductInCart": {
+            "put": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Update product in cart",
+                "description": "Update quantity, size, toppings, and note for a product in cart",
+                "operationId": "c4b1d56050a8a0539f28080ccf9f086c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "order_detail_id",
+                                    "size",
+                                    "quantity",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "order_detail_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "size": {
+                                        "type": "string",
+                                        "example": "M"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 2
+                                    },
+                                    "toppings_id": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "example": "Ít đường"
+                                    },
+                                    "total_price": {
+                                        "type": "number",
+                                        "example": 75000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Order or Order Detail not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cart/removeProductFromCart": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove product from cart",
+                "description": "Remove a product (order detail) from shopping cart",
+                "operationId": "368e1b70ca5297951256f8cc87e9ad68",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cart_id",
+                                    "order_detail_id"
+                                ],
+                                "properties": {
+                                    "cart_id": {
+                                        "description": "Order ID (cart ID)",
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "order_detail_id": {
+                                        "description": "Order detail ID to remove",
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product removed from cart successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Cart or Product not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cart/removeToppingFromCart": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove topping from product in cart",
+                "description": "Remove a specific topping from a product in shopping cart",
+                "operationId": "7027f4798f73d7887394bee00200ddfb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cart_id",
+                                    "order_detail_id",
+                                    "topping_id"
+                                ],
+                                "properties": {
+                                    "cart_id": {
+                                        "description": "Order ID (cart ID)",
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "order_detail_id": {
+                                        "description": "Order detail ID (parent product)",
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "topping_id": {
+                                        "description": "Topping ID to remove",
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Topping removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Topping removed from cart successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Cart, Product, or Topping not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customer/cancelOrder": {
             "post": {
                 "tags": [
@@ -1945,6 +2387,127 @@
                     },
                     "404": {
                         "description": "Customer or Order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/orders/update/{id}": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Update order (Admin)",
+                "description": "Update order details including status, payment, and customer information",
+                "operationId": "f2809cf71dd75c6e4363eb108b8fe643",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_number": {
+                                        "type": "string"
+                                    },
+                                    "receiver_name": {
+                                        "type": "string"
+                                    },
+                                    "receiver_address": {
+                                        "type": "string"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Banking",
+                                            "Cash"
+                                        ]
+                                    },
+                                    "payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "paid"
+                                        ]
+                                    },
+                                    "order_status": {
+                                        "type": "string"
+                                    },
+                                    "order_total": {
+                                        "type": "number"
+                                    },
+                                    "rate": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 0
+                                    },
+                                    "customer_feedback": {
+                                        "type": "string"
+                                    },
+                                    "host_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "source": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Offline",
+                                            "Online"
+                                        ]
+                                    },
+                                    "team_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order updated successfully . "
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    },
+                    "422": {
+                        "description": "Validation Error"
                     }
                 },
                 "security": [
@@ -2317,6 +2880,449 @@
                     }
                 }
             }
+        },
+        "/api/admin/products/add": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Create new product (Admin)",
+                "description": "Create a new product with images, categories, and toppings",
+                "operationId": "c43505e3c0f874e5c87ecd476f6fe664",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "status",
+                                    "categories_id[]"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Cappuccino"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "thumbnailImage": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "productDetailImages[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 45000
+                                    },
+                                    "cost": {
+                                        "type": "number"
+                                    },
+                                    "up_m_price": {
+                                        "type": "number",
+                                        "example": 5000
+                                    },
+                                    "up_l_price": {
+                                        "type": "number",
+                                        "example": 10000
+                                    },
+                                    "is_topping": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "categories_id[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    },
+                                    "toppings_id[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/products/update/{id}": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Update product (Admin)",
+                "description": "Update product details including images, categories, and toppings",
+                "operationId": "91fb03d76436f784079568f797684c0c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "thumbnailImage": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "productDetailImages[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "cost": {
+                                        "type": "number"
+                                    },
+                                    "up_m_price": {
+                                        "type": "number"
+                                    },
+                                    "up_l_price": {
+                                        "type": "number"
+                                    },
+                                    "is_topping": {
+                                        "type": "boolean"
+                                    },
+                                    "priority": {
+                                        "type": "integer"
+                                    },
+                                    "categories_id[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    },
+                                    "toppings_id[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/products/{id}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product detail (Admin)",
+                "description": "Get detailed product information including images, categories, and toppings for admin panel",
+                "operationId": "56c1910d87ff8e7c844ff5c10c2ac1fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product detail retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "is_topping": {
+                                                    "type": "boolean"
+                                                },
+                                                "price": {
+                                                    "type": "number"
+                                                },
+                                                "cost": {
+                                                    "type": "number"
+                                                },
+                                                "up_m_price": {
+                                                    "type": "number"
+                                                },
+                                                "up_l_price": {
+                                                    "type": "number"
+                                                },
+                                                "priority": {
+                                                    "type": "integer"
+                                                },
+                                                "categories_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "toppings_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "thumbnailImage": {
+                                                    "type": "string"
+                                                },
+                                                "productDetailImages": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vouchers/loadCustomerVoucher": {
+            "get": {
+                "tags": [
+                    "Vouchers"
+                ],
+                "summary": "Get available vouchers for customer",
+                "description": "Get all active vouchers for a specific branch/team, grouped by apply_type (discount/shipping_fee)",
+                "operationId": "a1bf2fb23eb9181ed2d248f45bf20e34",
+                "parameters": [
+                    {
+                        "name": "team_id",
+                        "in": "query",
+                        "description": "Team/Branch ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Vouchers retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "discount": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "format": "uuid"
+                                                            },
+                                                            "voucher_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "discount_type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "percent",
+                                                                    "fixed"
+                                                                ]
+                                                            },
+                                                            "discount_amount": {
+                                                                "type": "number"
+                                                            },
+                                                            "discount_percent": {
+                                                                "type": "number"
+                                                            },
+                                                            "minimum": {
+                                                                "type": "number"
+                                                            },
+                                                            "remaining": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "shipping_fee": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "firebaseAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -2349,6 +3355,10 @@
         {
             "name": "Categories",
             "description": "API Endpoints for category management"
+        },
+        {
+            "name": "Vouchers",
+            "description": "API Endpoints for voucher management"
         },
         {
             "name": "Shipping",
