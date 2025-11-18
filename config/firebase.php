@@ -207,7 +207,7 @@ return [
             'project_id' => env('FIREBASE_PROJECT_ID'),
 
             'credentials' => (static function () {
-                // Cách 1: Từ các env variables riêng lẻ
+                // Priority 1: Individual environment variables (recommended for production/DigitalOcean)
                 if (env('FIREBASE_CLIENT_EMAIL')) {
                     return [
                         'json' => [
@@ -217,16 +217,16 @@ return [
                             'private_key' => str_replace('\\n', "\n", env('FIREBASE_PRIVATE_KEY')),
                             'client_email' => env('FIREBASE_CLIENT_EMAIL'),
                             'client_id' => env('FIREBASE_CLIENT_ID'),
-                            'auth_uri' => env('FIREBASE_AUTH_URI'),
-                            'token_uri' => env('FIREBASE_TOKEN_URI'),
-                            'auth_provider_x509_cert_url' => env('FIREBASE_AUTH_PROVIDER_CERT_URL'),
-                            'client_x509_cert_url' => env('FIREBASE_CLIENT_CERT_URL'),
+                            'auth_uri' => env('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
+                            'token_uri' => env('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token'),
+                            'auth_provider_x509_cert_url' => env('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', 'https://www.googleapis.com/oauth2/v1/certs'),
+                            'client_x509_cert_url' => env('FIREBASE_CLIENT_X509_CERT_URL'),
                             'universe_domain' => env('FIREBASE_UNIVERSE_DOMAIN', 'googleapis.com'),
                         ]
                     ];
                 }
 
-                // Cách 2: Base64 encoded JSON
+                // Priority 2: Base64 encoded JSON (alternative for some deployment platforms)
                 $base64Json = env('FIREBASE_CREDENTIALS_BASE64');
                 if (!empty($base64Json)) {
                     $decoded = json_decode(base64_decode($base64Json), true);
@@ -235,8 +235,8 @@ return [
                     }
                 }
 
-                // Cách 3: JSON string trực tiếp
-                $jsonString = env('FIREBASE_CREDENTIALS');
+                // Priority 3: JSON string (from FIREBASE_CREDENTIALS_JSON variable)
+                $jsonString = env('FIREBASE_CREDENTIALS_JSON');
                 if (!empty($jsonString)) {
                     $decoded = json_decode($jsonString, true);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -244,13 +244,23 @@ return [
                     }
                 }
 
-                // Fallback: File path (local development)
+                // Priority 4: File path (for local development only)
                 $credentialsPath = env('FIREBASE_CREDENTIALS', env('GOOGLE_APPLICATION_CREDENTIALS'));
-                if ($credentialsPath && file_exists($credentialsPath)) {
-                    return ['file' => $credentialsPath];
+                if (!empty($credentialsPath)) {
+                    // Check if it's an absolute path
+                    $fullPath = $credentialsPath;
+                    
+                    // If relative path, convert to absolute from base_path
+                    if (!file_exists($fullPath)) {
+                        $fullPath = base_path($credentialsPath);
+                    }
+                    
+                    if (file_exists($fullPath)) {
+                        return ['file' => $fullPath];
+                    }
                 }
 
-                throw new \Exception('Firebase credentials not configured. Please set FIREBASE_CLIENT_EMAIL or FIREBASE_CREDENTIALS_BASE64 in environment variables.');
+                throw new \Exception('Firebase credentials not configured. Please set FIREBASE_CLIENT_EMAIL or FIREBASE_CREDENTIALS in environment variables, or ensure the credentials file exists at the specified path.');
             })(),
         ],
     ],
