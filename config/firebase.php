@@ -208,21 +208,20 @@ return [
 
             'credentials' => (static function () {
                 // Priority 1: Individual environment variables (recommended for production/DigitalOcean)
+                // Return the array directly (package expects array or string, not ['json' => array])
                 if (env('FIREBASE_CLIENT_EMAIL')) {
                     return [
-                        'json' => [
-                            'type' => env('FIREBASE_TYPE', 'service_account'),
-                            'project_id' => env('FIREBASE_PROJECT_ID'),
-                            'private_key_id' => env('FIREBASE_PRIVATE_KEY_ID'),
-                            'private_key' => str_replace('\\n', "\n", env('FIREBASE_PRIVATE_KEY')),
-                            'client_email' => env('FIREBASE_CLIENT_EMAIL'),
-                            'client_id' => env('FIREBASE_CLIENT_ID'),
-                            'auth_uri' => env('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
-                            'token_uri' => env('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token'),
-                            'auth_provider_x509_cert_url' => env('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', 'https://www.googleapis.com/oauth2/v1/certs'),
-                            'client_x509_cert_url' => env('FIREBASE_CLIENT_X509_CERT_URL'),
-                            'universe_domain' => env('FIREBASE_UNIVERSE_DOMAIN', 'googleapis.com'),
-                        ]
+                        'type' => env('FIREBASE_TYPE', 'service_account'),
+                        'project_id' => env('FIREBASE_PROJECT_ID'),
+                        'private_key_id' => env('FIREBASE_PRIVATE_KEY_ID'),
+                        'private_key' => str_replace('\\n', "\n", env('FIREBASE_PRIVATE_KEY')),
+                        'client_email' => env('FIREBASE_CLIENT_EMAIL'),
+                        'client_id' => env('FIREBASE_CLIENT_ID'),
+                        'auth_uri' => env('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
+                        'token_uri' => env('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token'),
+                        'auth_provider_x509_cert_url' => env('FIREBASE_AUTH_PROVIDER_X509_CERT_URL', 'https://www.googleapis.com/oauth2/v1/certs'),
+                        'client_x509_cert_url' => env('FIREBASE_CLIENT_X509_CERT_URL'),
+                        'universe_domain' => env('FIREBASE_UNIVERSE_DOMAIN', 'googleapis.com'),
                     ];
                 }
 
@@ -231,7 +230,7 @@ return [
                 if (!empty($base64Json)) {
                     $decoded = json_decode(base64_decode($base64Json), true);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        return ['json' => $decoded];
+                        return $decoded;
                     }
                 }
 
@@ -240,7 +239,7 @@ return [
                 if (!empty($jsonString)) {
                     $decoded = json_decode($jsonString, true);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        return ['json' => $decoded];
+                        return $decoded;
                     }
                 }
 
@@ -249,14 +248,14 @@ return [
                 if (!empty($credentialsPath)) {
                     // Check if it's an absolute path
                     $fullPath = $credentialsPath;
-                    
+
                     // If relative path, convert to absolute from base_path
                     if (!file_exists($fullPath)) {
                         $fullPath = base_path($credentialsPath);
                     }
-                    
+
                     if (file_exists($fullPath)) {
-                        return ['file' => $fullPath];
+                        return $fullPath; // Return path as string
                     }
                 }
 
