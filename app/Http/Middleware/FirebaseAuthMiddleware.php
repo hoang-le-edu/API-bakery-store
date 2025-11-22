@@ -25,7 +25,7 @@ class FirebaseAuthMiddleware
     {
         Log::debug('FirebaseAuthMiddleware - Starting token verification');
 
-        $token = $request->bearerToken(); // Lấy token từ header Authorization
+        $token = $request->bearerToken(); // Get token from Authorization header
 
         if (!$token) {
             Log::warning('FirebaseAuthMiddleware - No bearer token provided');
@@ -37,6 +37,21 @@ class FirebaseAuthMiddleware
         try {
             Log::debug('FirebaseAuthMiddleware - Attempting to verify token');
             $verifiedIdToken = $this->firebaseAuth->verifyIdToken($token);
+            $firebaseUid = $verifiedIdToken->claims()->get('sub'); // Get the UID from the token
+
+            // Fetch the user from the database
+            $user = \App\Models\User::where('firebase_uid', $firebaseUid)->first();
+
+            if (!$user) {
+                Log::warning('FirebaseAuthMiddleware - User not found', ['uid' => $firebaseUid]);
+                return response()->json(['error' => 'User not found'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            // Set the user in the authentication context
+            auth()->setUser($user);
+            Log::info('FirebaseAuthMiddleware - User authenticated successfully', ['uid' => $firebaseUid]);
+
+            // Optionally, attach the Firebase user claims to the request
             $request->attributes->set('firebaseUser', $verifiedIdToken->claims()->all());
             Log::info('FirebaseAuthMiddleware - Token verified successfully', ['uid' => $verifiedIdToken->claims()->get('sub')]);
             //            return \response()->json($request->attributes->get('firebaseUser'));
