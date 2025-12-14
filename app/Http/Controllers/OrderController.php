@@ -113,12 +113,33 @@ class OrderController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+    /**
+     * @OA\Post(
+     *     path="/api/cart/createCart",
+     *     tags={"Cart"},
+     *     summary="Create or get user's cart",
+     *     description="Get existing cart or create a new one if it doesn't exist. Only one cart per user is allowed.",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="custom_name", type="string", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart created or retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function createCart(Request $request)
     {
-        $validated = $request->validate([
-            'type' => 'required',
-        ]);
-
         $currentUser = auth()->user();
         $customer = Customer::where('user_id', $currentUser->id)->first();
 
@@ -126,14 +147,26 @@ class OrderController extends Controller
             return response()->json(['message' => 'Customer not found.'], 404);
         }
 
-        // Create a new order
+        // Check if cart already exists
+        $existingCart = Order::where('host_id', $customer->id)
+            ->where('order_status', 'Draft')
+            ->first();
+
+        if ($existingCart) {
+            return response()->json([
+                'message' => 'Cart already exists.',
+                'data' => $existingCart
+            ]);
+        }
+
+        // Create a new cart
         $order = Order::create([
             'order_number' => 'ORD' . time(),
             'receiver_name' => $customer->full_name,
             'receiver_address' => '',
             'payment_method' => 'Cash',
             'order_status' => 'Draft',
-            'type' => $validated['type'],
+            'type' => 'Personal',
             'custom_name' => $request->get('custom_name'),
             'source' => 'Online',
             'customer_feedback' => '',
@@ -174,12 +207,12 @@ class OrderController extends Controller
      */
     public function loadCustomerOrders(Request $request)
     {
-//        $currentUser = auth()->user();
-//        if($currentUser->user_type == 'user') {
-//            $customer = Customer::find($_GET["customerId"]);
-//        } else {
-//            $customer = Customer::where('user_id', $currentUser->id)->first();
-//        }
+        //        $currentUser = auth()->user();
+        //        if($currentUser->user_type == 'user') {
+        //            $customer = Customer::find($_GET["customerId"]);
+        //        } else {
+        //            $customer = Customer::where('user_id', $currentUser->id)->first();
+        //        }
 
         $user = $this->checkFirebaseUser($request);
 
@@ -251,10 +284,10 @@ class OrderController extends Controller
     }
     public function loadCustomerOrdersHistory(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Orders fetched successfully.',
-//            'data' => Auth::user()->customer,
-//        ]);
+        //        return response()->json([
+        //            'message' => 'Orders fetched successfully.',
+        //            'data' => Auth::user()->customer,
+        //        ]);
         $customer = Auth::user()->customer;
 
         if (!$customer) {
@@ -270,7 +303,7 @@ class OrderController extends Controller
             ->get();
 
         $return_data = [];
-        foreach($orders as $order) {
+        foreach ($orders as $order) {
             $orderCustomer = $order->customers()->where('customer_id', $customer->id)->first();
 
             $orderDetails = $orderCustomer->pivot->orderDetails()
@@ -309,7 +342,7 @@ class OrderController extends Controller
 
             $currentUser = auth()->user();
 
-            if($currentUser->user_type == 'user') {
+            if ($currentUser->user_type == 'user') {
                 $customer_id = $order->host_id;
             } else {
                 $customer_id = Customer::where('user_id', $currentUser->id)->first()->id;
@@ -377,7 +410,7 @@ class OrderController extends Controller
                         'product_price' => $orderDetail->product->price,
                         'size' => $orderDetail->size,
                         'quantity' => $orderDetail->quantity,
-                        'image' => $orderDetail->product->image ? 'https://weevil-exotic-thankfully.ngrok-free.app/storage/' .$orderDetail->product->image : 'https://weevil-exotic-thankfully.ngrok-free.app/resources/assets/images/empty-image.jpg',
+                        'image' => $orderDetail->product->image ? 'https://weevil-exotic-thankfully.ngrok-free.app/storage/' . $orderDetail->product->image : 'https://weevil-exotic-thankfully.ngrok-free.app/resources/assets/images/empty-image.jpg',
                         'note' => $orderDetail->note,
                         'total_price' => $orderDetail->total_price,
                         'count_topping' => $orderDetail->toppings->count(),
@@ -403,9 +436,8 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
-
     }
-    
+
     /**
      * @OA\Post(
      *     path="/api/orders/proceed",
@@ -447,14 +479,53 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Customer not found")
      * )
      */
+    /**
+     * @OA\Post(
+     *     path="/api/orders/proceed",
+     *     tags={"Orders"},
+     *     summary="Proceed with checkout",
+     *     description="Checkout selected products from cart. Creates a new order with selected items and removes them from cart.",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_detail_ids", "receiver_name", "receiver_address", "payment_method", "province", "district", "ward", "street", "phone_number", "shipping_fee"},
+     *             @OA\Property(property="order_detail_ids", type="array", @OA\Items(type="string"), description="Array of order detail IDs to checkout"),
+     *             @OA\Property(property="receiver_name", type="string"),
+     *             @OA\Property(property="receiver_address", type="string"),
+     *             @OA\Property(property="payment_method", type="string", enum={"Cash", "Banking"}),
+     *             @OA\Property(property="voucher", type="string", nullable=true),
+     *             @OA\Property(property="voucher_shipping", type="string", nullable=true),
+     *             @OA\Property(property="note", type="string", nullable=true),
+     *             @OA\Property(property="province", type="string"),
+     *             @OA\Property(property="district", type="string"),
+     *             @OA\Property(property="ward", type="string"),
+     *             @OA\Property(property="street", type="string"),
+     *             @OA\Property(property="phone_number", type="string"),
+     *             @OA\Property(property="shipping_fee", type="number"),
+     *             @OA\Property(property="discount_number", type="number", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Customer not found")
+     * )
+     */
     public function proceedOrder(Request $request)
     {
         $validated = $request->validate([
-            'order_id' => 'required|exists:orders,id',
+            'order_detail_ids' => 'required|array',
+            'order_detail_ids.*' => 'required|exists:order_details,id',
             'receiver_name' => 'required|string|max:255',
             'receiver_address' => 'required|string|max:255',
             'payment_method' => 'required|in:Cash,Banking',
-//            'branch' => 'required|uuid|exists:teams,id',
             'voucher' => 'nullable|string',
             'voucher_shipping' => 'nullable|string',
             'note' => 'nullable|string',
@@ -465,7 +536,6 @@ class OrderController extends Controller
             'phone_number' => 'required|string',
             'shipping_fee' => 'required|numeric',
             'discount_number' => 'nullable|numeric',
-            'order_total' => 'nullable|numeric',
         ]);
 
         $user = $this->checkFirebaseUser($request);
@@ -480,51 +550,119 @@ class OrderController extends Controller
             return response()->json(['message' => 'Customer not found.'], 404);
         }
 
-        // Fetch the order
-        $order = Order::findOrFail($validated['order_id']);
-
-        // Ensure the order belongs to the current customer
-        $customerOrder = CustomerOrder::where('customer_id', $customer->id)
-            ->where('order_id', $order->id)
+        // Get the Draft cart
+        $cartOrder = Order::where('host_id', $customer->id)
+            ->where('order_status', 'Draft')
             ->first();
 
-        if (!$customerOrder) {
-            return response()->json(['message' => 'Unauthorized or invalid order.'], 403);
+        if (!$cartOrder) {
+            return response()->json(['message' => 'Cart not found.'], 404);
         }
 
-        // Update the order with the new details
-        $order->update([
+        // Get customer order relationship
+        $cartCustomerOrder = CustomerOrder::where('customer_id', $customer->id)
+            ->where('order_id', $cartOrder->id)
+            ->first();
+
+        if (!$cartCustomerOrder) {
+            return response()->json(['message' => 'Invalid cart.'], 403);
+        }
+
+        // Fetch selected order details from cart
+        $selectedOrderDetails = OrderDetail::whereIn('id', $validated['order_detail_ids'])
+            ->where('customer_order_id', $cartCustomerOrder->id)
+            ->where('parent_id', null)
+            ->with('toppings')
+            ->get();
+
+        if ($selectedOrderDetails->isEmpty()) {
+            return response()->json(['message' => 'No valid products selected.'], 400);
+        }
+
+        // Calculate order total
+        $orderTotal = $selectedOrderDetails->sum('total_price') + $validated['shipping_fee'];
+        if (isset($validated['discount_number'])) {
+            $orderTotal -= $validated['discount_number'];
+        }
+
+        // Create a new order for checkout
+        $newOrder = Order::create([
+            'order_number' => 'ORD' . time(),
             'receiver_name' => $validated['receiver_name'],
             'receiver_address' => $validated['receiver_address'],
             'receiver_phone' => $validated['phone_number'],
             'payment_method' => $validated['payment_method'],
-            'order_status' => 'Wait For Approval', // Update the status to 'Pending'
-            'order_total' => $validated['order_total'],
-            'note' => $validated['note'],
+            'order_status' => 'Wait For Approval',
+            'order_total' => $orderTotal,
+            'note' => $validated['note'] ?? '',
             'province' => $validated['province'],
             'district' => $validated['district'],
             'ward' => $validated['ward'],
             'street' => $validated['street'],
             'phone_number' => $validated['phone_number'],
-//            'team_id' => $validated['branch'],
             'shipping_fee' => $validated['shipping_fee'],
+            'source' => 'Online',
+            'host_id' => $customer->id,
+            'customer_feedback' => '',
         ]);
+
+        // Attach customer to new order
+        $newOrder->customers()->attach($customer->id);
+        $newCustomerOrder = CustomerOrder::where('customer_id', $customer->id)
+            ->where('order_id', $newOrder->id)
+            ->first();
+
+        // Copy selected order details to new order
+        foreach ($selectedOrderDetails as $oldDetail) {
+            $newDetail = $newCustomerOrder->orderDetails()->create([
+                'order_detail_number' => 'OD' . time() . rand(100, 999),
+                'customer_order_id' => $newCustomerOrder->id,
+                'product_id' => $oldDetail->product_id,
+                'parent_id' => null,
+                'size' => $oldDetail->size,
+                'quantity' => $oldDetail->quantity,
+                'note' => $oldDetail->note,
+                'total_price' => $oldDetail->total_price,
+            ]);
+
+            // Copy toppings
+            foreach ($oldDetail->toppings as $topping) {
+                $newDetail->toppings()->create([
+                    'order_detail_number' => 'ODTP' . time() . rand(100, 999),
+                    'customer_order_id' => $newCustomerOrder->id,
+                    'product_id' => $topping->product_id,
+                    'size' => $topping->size,
+                    'quantity' => $topping->quantity,
+                    'total_price' => $topping->total_price,
+                    'note' => $topping->note,
+                    'parent_id' => $newDetail->id,
+                ]);
+            }
+
+            // Remove from cart: delete toppings first, then the detail
+            $oldDetail->toppings()->delete();
+            $oldDetail->delete();
+        }
+
+        // Update cart total
+        $remainingTotal = OrderDetail::where('customer_order_id', $cartCustomerOrder->id)
+            ->where('parent_id', null)
+            ->sum('total_price');
+        $cartOrder->order_total = $remainingTotal;
+        $cartOrder->save();
 
         // Apply vouchers if provided
         if (!empty($validated['voucher'])) {
-            $order->vouchers()->attach($validated['voucher']);
+            $newOrder->vouchers()->attach($validated['voucher']);
         }
 
         if (!empty($validated['voucher_shipping'])) {
-            $order->vouchers()->attach($validated['voucher_shipping']);
+            $newOrder->vouchers()->attach($validated['voucher_shipping']);
         }
 
-        // Save the updated order
-        $order->save();
-
         return response()->json([
-            'message' => 'Order proceeded successfully.',
-            'data' => $order,
+            'message' => 'Order created successfully.',
+            'data' => $newOrder,
         ]);
     }
 
@@ -555,7 +693,8 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Customer or Order not found")
      * )
      */
-    function markReceived(Request $request) {
+    function markReceived(Request $request)
+    {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
         ]);
@@ -618,7 +757,8 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Customer or Order not found")
      * )
      */
-    function giveFeedback(Request $request) {
+    function giveFeedback(Request $request)
+    {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
             'rate' => 'required|integer|min:1|max:5',
@@ -665,12 +805,12 @@ class OrderController extends Controller
                     'count_product' => 0,
                 ];
                 $orderCustomer = $item->customers()->where('customer_id', $item->host_id)->first();
-                if($orderCustomer) {
+                if ($orderCustomer) {
                     $oderDetail = $orderCustomer->pivot->orderDetails()
                         ->where('parent_id', null)
                         ->with('toppings.product') // Include topping product details
                         ->get();
-                    if($oderDetail) {
+                    if ($oderDetail) {
                         $customFields[$item->id] = [
                             'count_product' => $oderDetail->count(),
                         ];
@@ -681,13 +821,13 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return $customFields;
         }
-
     }
 
-    function calculateDiscount($order) {
+    function calculateDiscount($order)
+    {
         $totalDiscount = 0;
         foreach ($order->vouchers as $voucher) {
-            if($voucher->apply_type == 'shipping_fee') continue;
+            if ($voucher->apply_type == 'shipping_fee') continue;
             if ($voucher->discount_type == 'percent') {
                 $totalDiscount += $order->order_total * $voucher->discount_percent / 100;
             } else {
@@ -730,22 +870,49 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Product or Customer not found")
      * )
      */
+    /**
+     * @OA\Post(
+     *     path="/api/cart/addProductToCart",
+     *     tags={"Cart"},
+     *     summary="Add product to cart",
+     *     description="Add a product to user's single cart. Automatically creates or uses existing Draft order.",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product"},
+     *             @OA\Property(property="product", type="object",
+     *                 @OA\Property(property="product_id", type="string", format="uuid"),
+     *                 @OA\Property(property="size", type="string", example="M"),
+     *                 @OA\Property(property="quantity", type="integer", example=2),
+     *                 @OA\Property(property="toppings_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="note", type="string"),
+     *                 @OA\Property(property="total_price", type="number")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product added to cart successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product or Customer not found")
+     * )
+     */
     public function addProductToCart(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Cart added successfully.',
-//            'data' => $request->all(),
-//        ]);
-
         $validated = $request->validate([
             'product' => 'required',
             'product.product_id' => 'required',
             'product.size' => 'required',
             'product.quantity' => 'required',
-            'product.toppings_id' => 'nullable|array', // Ensure toppings_id is an array
+            'product.toppings_id' => 'nullable|array',
             'product.note' => 'nullable',
             'product.total_price' => 'required',
-            'order_ids' => 'array', // Ensure order_ids is an array
         ]);
 
         // Check if product exists
@@ -755,9 +922,6 @@ class OrderController extends Controller
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-//        $currentUser = auth()->user();
-//        $customer = Customer::where('user_id', $currentUser->id)->first();
-
         $user = $this->checkFirebaseUser($request);
 
         if (!$user) {
@@ -766,57 +930,87 @@ class OrderController extends Controller
 
         $customer = $user->customer;
 
-        // Check if customer exists
         if (!$customer) {
             return response()->json(['message' => 'Customer not found.'], 404);
         }
 
-        if(empty($validated['order_ids'])) {
-            //Create order
+        // Find or create a single Draft order for this customer
+        $order = Order::where('host_id', $customer->id)
+            ->where('order_status', 'Draft')
+            ->first();
+
+        if (!$order) {
+            // Create a new cart if none exists
             $order = Order::create([
                 'order_number' => 'ORD' . time(),
                 'receiver_name' => $customer->full_name,
                 'receiver_address' => '',
                 'payment_method' => 'Cash',
                 'order_status' => 'Draft',
-//                'type' => 'Personal', // team order
-//                'custom_name' => '', // team order
+                'type' => 'Personal',
                 'source' => 'Online',
                 'customer_feedback' => '',
-                'order_total' => $validated['product']['total_price'],
+                'order_total' => 0,
                 'host_id' => $customer->id,
             ]);
             $order->customers()->attach($customer->id);
-            $validated['order_ids'] = [$order->id];
         }
-        $orderIds = $validated['order_ids']; // Array of order IDs
-        $addedProducts = []; // To store the added products for each cart
 
-        foreach ($orderIds as $orderId) {
-            // Fetch the order
-            $order = Order::find($orderId);
+        // Get the customer order relationship
+        $customerOrder = CustomerOrder::where('customer_id', $customer->id)
+            ->where('order_id', $order->id)
+            ->first();
 
-            // If the order doesn't exist, skip it
-            if (!$order) {
-                continue;
+        if (!$customerOrder) {
+            return response()->json(['message' => 'Cart relationship not found.'], 500);
+        }
+
+        // Normalize toppings array for comparison
+        $toppingsIds = isset($validated['product']['toppings_id'])
+            ? array_values(array_unique($validated['product']['toppings_id']))
+            : [];
+        sort($toppingsIds);
+
+        // Check if this exact product (same product_id, size, note, and toppings) already exists in cart
+        $existingOrderDetails = $customerOrder->orderDetails()
+            ->where('product_id', $product->id)
+            ->where('size', $validated['product']['size'])
+            ->where('note', $validated['product']['note'] ?? '')
+            ->where('parent_id', null)
+            ->with('toppings')
+            ->get();
+
+        $orderDetail = null;
+        foreach ($existingOrderDetails as $detail) {
+            // Get existing toppings IDs
+            $existingToppings = $detail->toppings->pluck('product_id')->toArray();
+            sort($existingToppings);
+
+            // Compare toppings
+            if ($existingToppings === $toppingsIds) {
+                $orderDetail = $detail;
+                break;
+            }
+        }
+
+        if ($orderDetail) {
+            // Update existing order detail - increase quantity and total price
+            $orderDetail->quantity += $validated['product']['quantity'];
+            $orderDetail->total_price += $validated['product']['total_price'];
+            $orderDetail->save();
+
+            // Update toppings quantities
+            foreach ($orderDetail->toppings as $topping) {
+                $topping->quantity += $validated['product']['quantity'];
+                $topping->total_price += ($topping->total_price / ($orderDetail->quantity - $validated['product']['quantity'])) * $validated['product']['quantity'];
+                $topping->save();
             }
 
-            // Ensure the order belongs to the current customer
-            $customerOrder = CustomerOrder::where('customer_id', $customer->id)
-                ->where('order_id', $order->id)
-                ->first();
-
-            if (!$customerOrder) {
-                continue; // Skip if the customer doesn't have access to this order
-            }
-
-            // Update the order total
-            $order->order_total += $validated['product']['total_price'];
-//            $order->save();
-
-            // Add order detail using the CustomerOrder pivot
+            $message = 'Product quantity updated in cart successfully.';
+        } else {
+            // Create new order detail
             $orderDetail = $customerOrder->orderDetails()->create([
-                'order_detail_number' => 'OD' . time(),
+                'order_detail_number' => 'OD' . time() . rand(100, 999),
                 'customer_order_id' => $customerOrder->id,
                 'product_id' => $product->id,
                 'parent_id' => null,
@@ -827,8 +1021,8 @@ class OrderController extends Controller
             ]);
 
             // Add toppings if provided
-            if (isset($validated['product']['toppings_id'])) {
-                foreach ($validated['product']['toppings_id'] as $toppingId) {
+            if (!empty($toppingsIds)) {
+                foreach ($toppingsIds as $toppingId) {
                     $topping = Product::findOrFail($toppingId);
 
                     $extra_price = $topping->productsToppingThis()
@@ -836,7 +1030,7 @@ class OrderController extends Controller
                         ->first()->pivot->extra_price;
 
                     $orderDetail->toppings()->create([
-                        'order_detail_number' => 'ODTP' . time(),
+                        'order_detail_number' => 'ODTP' . time() . rand(100, 999),
                         'customer_order_id' => $customerOrder->id,
                         'product_id' => $topping->id,
                         'size' => 'S',
@@ -848,8 +1042,16 @@ class OrderController extends Controller
                 }
             }
 
-            // Prepare the response data for this cart
-            $addedProducts[] = [
+            $message = 'Product added to cart successfully.';
+        }
+
+        // Update order total
+        $order->order_total += $validated['product']['total_price'];
+        $order->save();
+
+        return response()->json([
+            'message' => $message,
+            'data' => [
                 'order_id' => $order->id,
                 'order_detail' => [
                     'id' => $orderDetail->id,
@@ -865,15 +1067,29 @@ class OrderController extends Controller
                     'total_price' => $orderDetail->total_price,
                     'toppings' => $orderDetail->toppings,
                 ],
-            ];
-        }
-
-        return response()->json([
-            'message' => 'Product added to multiple carts successfully.',
-            'data' => $addedProducts,
+            ],
         ]);
     }
-    public function getExistedCart(Request $request) {
+    /**
+     * @OA\Get(
+     *     path="/api/cart/getExistedCart",
+     *     tags={"Cart"},
+     *     summary="Check if cart exists",
+     *     description="Get basic information about user's cart if it exists",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart information retrieved",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Cart not found or empty")
+     * )
+     */
+    public function getExistedCart(Request $request)
+    {
         $currentUser = auth()->user();
         $customer = Customer::where('user_id', $currentUser->id)->first();
 
@@ -881,33 +1097,30 @@ class OrderController extends Controller
             return response()->json(['message' => 'Customer not found.'], 404);
         }
 
-        // Get the latest order with status 'Draft' for the customer
-        $orders = Order::where('host_id', $customer->id)
+        // Get the single Draft order (cart) for the customer
+        $order = Order::where('host_id', $customer->id)
             ->where('order_status', 'Draft')
-            ->get();
+            ->first();
 
-        if ($orders->isEmpty()) {
+        if (!$order) {
             return response()->json(['message' => 'Cart is empty.'], 404);
         }
 
-        $return_data = [];
-
-        foreach($orders as $order) {
-            $return_data[] = [
-                'order_id' => $order->id,
-                'name' => $order->custom_name ? $order->custom_name : $order->order_number,
-                'created_at' => $order->created_at,
-                'host_id' => $order->host_id,
-                'type' => $order->customers()->where('customer_id', $customer->id)->count() >= 2 ? 'Group' : 'Personal',
-            ];
-        }
+        $data = [
+            'order_id' => $order->id,
+            'name' => $order->custom_name ? $order->custom_name : $order->order_number,
+            'created_at' => $order->created_at,
+            'host_id' => $order->host_id,
+            'type' => 'Personal',
+        ];
 
         return response()->json([
             'message' => 'Cart fetched successfully.',
-            'data' => $return_data
+            'data' => $data
         ]);
     }
-    public function loadCartDetail(Request $request, $id) {
+    public function loadCartDetail(Request $request, $id)
+    {
         $currentUser = auth()->user();
         $customer = Customer::where('user_id', $currentUser->id)->first();
 
@@ -986,39 +1199,28 @@ class OrderController extends Controller
      *     path="/api/cart/fetchCart",
      *     tags={"Cart"},
      *     summary="Fetch user's shopping cart",
-     *     description="Get all draft orders (carts) with their items for the authenticated customer",
+     *     description="Get the single cart (Draft order) with all items for the authenticated customer",
      *     security={{"firebaseAuth": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="Cart fetched successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Cart fetched successfully."),
-     *             @OA\Property(property="data", type="array", @OA\Items(type="object",
-     *                 @OA\Property(property="order_id", type="integer"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="order_id", type="string"),
      *                 @OA\Property(property="order_number", type="string"),
-     *                 @OA\Property(property="type", type="string"),
      *                 @OA\Property(property="count_product", type="integer"),
      *                 @OA\Property(property="total_price", type="number"),
      *                 @OA\Property(property="order_detail", type="array", @OA\Items(type="object"))
-     *             ))
+     *             )
      *         )
      *     ),
      *     @OA\Response(response=401, description="Unauthorized"),
-     *     @OA\Response(response=404, description="Customer not found")
+     *     @OA\Response(response=404, description="Customer or cart not found")
      * )
      */
     public function fetchCart(Request $request)
     {
-//        // Lấy thông tin user từ Firebase Token
-//        $firebaseUser = $request->attributes->get('firebaseUser');
-//
-//        if (!$firebaseUser) {
-//            return response()->json(['message' => 'Unauthorized.'], 401);
-//        }
-//
-//        // Tìm user trong database dựa vào Firebase UID
-//        $user = User::where('firebase_uid', $firebaseUser['sub'])->first();
-
         $user = $this->checkFirebaseUser($request);
 
         if (!$user) {
@@ -1031,70 +1233,72 @@ class OrderController extends Controller
             return response()->json(['message' => 'Customer not found.'], 404);
         }
 
-        // Get the latest order with status 'Draft' for the customer
-        $orders = Order::where('host_id', $customer->id)
+        // Get the single Draft order (cart) for the customer
+        $order = Order::where('host_id', $customer->id)
             ->where('order_status', 'Draft')
-            ->orderBy('updated_at', 'DESC')
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Cart is empty.',
+                'data' => null
+            ]);
+        }
+
+        // Fetch order details
+        $orderCustomer = $order->customers()->where('customer_id', $customer->id)->first();
+
+        if (!$orderCustomer) {
+            return response()->json(['message' => 'Cart not found.'], 404);
+        }
+
+        // Get order details
+        $orderDetails = $orderCustomer->pivot->orderDetails()
+            ->where('parent_id', null)
+            ->with('toppings.product')
             ->get();
 
-        $return_data = [];
+        $total_price = 0;
+        $orderDetailData = [];
 
-        foreach($orders as $order) {
-            $total_price = 0;
-            // Fetch order details only if the relationship exists
-            $orderCustomer = $order->customers()->where('customer_id', $customer->id)->first();
-
-            if ($orderCustomer) {
-                // Get order details if the relationship exists
-                $orderDetails = $orderCustomer->pivot->orderDetails()
-                    ->where('parent_id', null)
-                    ->with('toppings.product') // Include topping product details
-                    ->get();
-
-                $data = [
-                    'type' => $order->type,
-                    'name' => !empty($order->custom_name) ? $order->custom_name : $order->order_number,
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'date_created' => $order->created_at,
-                    'host_id' => $order->host_id,
-                    'count_product' => $orderDetails->count() ?? 0,
-                    'order_detail' => []
-                ];
-
-
-                foreach ($orderDetails as $orderDetail) {
-                    $total_price += $orderDetail->total_price;
-                    $data['order_detail'][] = [
-                        'id' => $orderDetail->id,
-                        'order_detail_number' => $orderDetail->order_detail_number,
-                        'product_id' => $orderDetail->product->id,
-                        'product_name' => $orderDetail->product->name,
-                        'product_price' => $orderDetail->product->price,
-                        'size' => $orderDetail->size,
-                        'quantity' => $orderDetail->quantity,
-                        'image' => $orderDetail->product->image ? asset('/storage/build/assets/' . $orderDetail->product->image) : null,
-                        'note' => $orderDetail->note,
-                        'total_price' => $orderDetail->total_price,
-                        'count_topping' => $orderDetail->toppings->count(),
-                        'toppings' => $orderDetail->toppings->map(function ($topping) use ($orderDetail) {
-                            return [
-                                'id' => $topping->id,
-                                'topping_id' => $topping->product->id,
-                                'name' => $topping->product->name,
-                                'price' => $topping->total_price,
-                            ];
-                        }),
+        foreach ($orderDetails as $orderDetail) {
+            $total_price += $orderDetail->total_price;
+            $orderDetailData[] = [
+                'id' => $orderDetail->id,
+                'order_detail_number' => $orderDetail->order_detail_number,
+                'product_id' => $orderDetail->product->id,
+                'product_name' => $orderDetail->product->name,
+                'product_price' => $orderDetail->product->price,
+                'size' => $orderDetail->size,
+                'quantity' => $orderDetail->quantity,
+                'image' => $orderDetail->product->image ? asset('/storage/build/assets/' . $orderDetail->product->image) : null,
+                'note' => $orderDetail->note,
+                'total_price' => $orderDetail->total_price,
+                'count_topping' => $orderDetail->toppings->count(),
+                'toppings' => $orderDetail->toppings->map(function ($topping) {
+                    return [
+                        'id' => $topping->id,
+                        'topping_id' => $topping->product->id,
+                        'name' => $topping->product->name,
+                        'price' => $topping->total_price,
                     ];
-                }
-                $data['total_price'] = $total_price;
-                $return_data[] = $data;
-            }
+                }),
+            ];
         }
+
+        $data = [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'date_created' => $order->created_at,
+            'host_id' => $order->host_id,
+            'count_product' => $orderDetails->count(),
+            'total_price' => $total_price,
+            'order_detail' => $orderDetailData
+        ];
 
         return response()->json([
             'message' => 'Cart fetched successfully.',
-            'data' => $return_data
+            'data' => $data
         ]);
     }
     /**
@@ -1237,8 +1441,8 @@ class OrderController extends Controller
                         'id' => $topping->id,
                         'name' => $topping->product->name,
                         'price' => $topping->product->productsToppingThis()
-                        ->where('product_id', $orderDetail->product_id)
-                        ->first()->pivot->extra_price,
+                            ->where('product_id', $orderDetail->product_id)
+                            ->first()->pivot->extra_price,
                     ];
                 }),
             ],
@@ -1442,7 +1646,8 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Customer or Order not found")
      * )
      */
-    public function cancelOrder(Request $request) {
+    public function cancelOrder(Request $request)
+    {
         $validated = $request->validate([
             'order_id' => 'required | exists:orders,id',
         ]);
@@ -1702,7 +1907,7 @@ class OrderController extends Controller
             'source' => 'Offline',
             'order_total' => 0,
             'host_id' => $customer->id,
-//            'team_id' => $currentUser->team_id,
+            //            'team_id' => $currentUser->team_id,
             'created_by' => $currentUser->id,
             'customer_feedback' => '',
         ]);
@@ -1751,15 +1956,15 @@ class OrderController extends Controller
         }
 
         // Update the order total
-        if($request->get('voucher_id')) {
+        if ($request->get('voucher_id')) {
             $order->vouchers()->attach($request->get('voucher_id'));
         }
         $order->order_total = $orderTotal;
         $order->save();
-        if($validated['payment_method'] == 'Banking') {
+        if ($validated['payment_method'] == 'Banking') {
             $payos = new PayOSController();
             $result = $payos->genPayment($order->id);
-            if($result['success']) $order['payment'] = $result['checkoutUrl'];
+            if ($result['success']) $order['payment'] = $result['checkoutUrl'];
         }
         return response()->json([
             'message' => 'Order created successfully.',
