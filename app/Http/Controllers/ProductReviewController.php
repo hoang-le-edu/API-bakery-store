@@ -125,9 +125,9 @@ class ProductReviewController extends BaseController
                 ];
             });
 
-            // Get review summary
+            // Get review summary - Use cached values for better performance
             $summary = [
-                'average_rating' => round($product->average_rating, 1),
+                'average_rating' => (float) $product->avg_rating,
                 'total_reviews' => $product->review_count,
                 'rating_distribution' => $product->rating_distribution
             ];
@@ -247,6 +247,9 @@ class ProductReviewController extends BaseController
                 'reviewed_at' => now(),
             ]);
 
+            // Update product's cached rating and review count
+            $summary = $product->updateRatingCache();
+
             // Load relationships for response
             $review->load(['user', 'product', 'order']);
 
@@ -271,7 +274,8 @@ class ProductReviewController extends BaseController
                         'id' => $product->id,
                         'name' => $product->name
                     ]
-                ]
+                ],
+                'summary' => $summary
             ], 'Review created successfully', 201);
         } catch (\Exception $e) {
             Log::error('Error creating review: ' . $e->getMessage());

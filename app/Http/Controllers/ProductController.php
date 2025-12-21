@@ -53,6 +53,8 @@ class ProductController extends BaseController
             'products.price as product_price',
             'products.image as product_image',
             'products.is_topping as is_topping',
+            'products.avg_rating as avg_rating',
+            'products.review_count as review_count',
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
@@ -93,6 +95,8 @@ class ProductController extends BaseController
                     'product_name' => $product->product_name,
                     'product_description' => $product->product_description,
                     'product_price' => $product->product_price,
+                    'avg_rating' => (float) $product->avg_rating,
+                    'review_count' => $product->review_count,
                 ];
             } else {
                 if ($prev_category_id != $product->category_id) {
@@ -109,6 +113,8 @@ class ProductController extends BaseController
                     'product_name' => $product->product_name,
                     'product_description' => $product->product_description,
                     'product_price' => $product->product_price,
+                    'avg_rating' => (float) $product->avg_rating,
+                    'review_count' => $product->review_count,
                 ];
             }
         }
@@ -201,6 +207,8 @@ class ProductController extends BaseController
             'products.description as product_description',
             'products.price as product_price',
             'products.image as product_image',
+            'products.avg_rating as avg_rating',
+            'products.review_count as review_count',
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
@@ -311,6 +319,8 @@ class ProductController extends BaseController
                 'product_description' => $product->product_description,
                 'product_price' => $product->product_price,
                 'product_image' => $product->product_image ? asset('storage/build/assets/' . $product->product_image) : null,
+                'avg_rating' => (float) $product->avg_rating,
+                'review_count' => $product->review_count,
             ];
         }
 
@@ -383,6 +393,8 @@ class ProductController extends BaseController
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
+            'avg_rating' => (float) $product->avg_rating,
+            'review_count' => $product->review_count,
             'topping_list' => $toppingList,
             'image_url' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
             'productDetailImages' => $product->images->map(function ($image) {
@@ -626,6 +638,11 @@ class ProductController extends BaseController
                 'image_path' => $image->image_path,  // Original image path
             ];
         });
+
+        // Add rating information from cached columns
+        $product['avg_rating'] = (float) $product->avg_rating;
+        $product['review_count'] = $product->review_count;
+        $product['rating_distribution'] = $product->rating_distribution;
 
         return response()->json([
             'success' => true,
