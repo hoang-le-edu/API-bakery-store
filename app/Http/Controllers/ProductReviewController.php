@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Exception;
 
 class ProductReviewController extends BaseController
 {
@@ -125,9 +127,9 @@ class ProductReviewController extends BaseController
                 ];
             });
 
-            // Get review summary
+            // Get review summary - Use cached values for better performance
             $summary = [
-                'average_rating' => round($product->average_rating, 1),
+                'average_rating' => (float) $product->avg_rating,
                 'total_reviews' => $product->review_count,
                 'rating_distribution' => $product->rating_distribution
             ];
@@ -247,6 +249,9 @@ class ProductReviewController extends BaseController
                 'reviewed_at' => now(),
             ]);
 
+            // Update product's cached rating and review count
+            $summary = $product->updateRatingCache();
+
             // Load relationships for response
             $review->load(['user', 'product', 'order']);
 
@@ -271,7 +276,8 @@ class ProductReviewController extends BaseController
                         'id' => $product->id,
                         'name' => $product->name
                     ]
-                ]
+                ],
+                'summary' => $summary
             ], 'Review created successfully', 201);
         } catch (\Exception $e) {
             Log::error('Error creating review: ' . $e->getMessage());
@@ -521,6 +527,312 @@ class ProductReviewController extends BaseController
         }
 
         return 'unknown';
+    }
+
+    private function formatMediaFiles($mediaFiles)
+    {
+        if (!$mediaFiles || !is_array($mediaFiles)) {
+            return [];
+        }
+
+        return array_map(function ($file) {
+            return [
+                'url' => isset($file['url']) ? $file['url'] : (isset($file['path']) ? asset('storage/' . $file['path']) : null),
+                'type' => isset($file['type']) ? $file['type'] : $this->getFileType($file['path'] ?? ''),
+                'name' => isset($file['name']) ? $file['name'] : (isset($file['path']) ? basename($file['path']) : 'unknown')
+            ];
+        }, $mediaFiles);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/orders/{order_id}/my-review",
+     *     tags={"Product Reviews"},
+     *     summary="Get my review for a specific order",
+     *     description="Get user's review details for a specific order",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User review retrieved successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Review not found"
+     *     )
+     * )
+     */
+    public function getMyReviewForOrder(Request $request, $orderId)
+    {
+        try {
+            $user = $this->checkFirebaseUser($request);
+            if (!$user) {
+                return $this->sendError('Unauthorized', [], 401);
+            }
+
+            $order = Order::findOrFail($orderId);
+
+            // Check if user owns this order
+            if ($order->host_id !== $user->customer->id ?? null) {
+                return $this->sendError('You can only view reviews from your own orders', [], 403);
+            }
+
+            // Get user's review for this order
+            $review = ProductReview::where('user_id', $user->id)
+                ->where('order_id', $orderId)
+                ->with(['product:id,name,image', 'user:id,name,email'])
+                ->first();
+
+            if (!$review) {
+                return $this->sendError('No review found for this order', [], 404);
+            }
+
+            $reviewData = [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'review_text' => $review->review_text,
+                'reviewed_at' => $review->created_at->format('Y-m-d H:i:s'),
+                'media_files' => $this->formatMediaFiles($review->media_files),
+                'is_approved' => $review->is_approved,
+                'product' => [
+                    'id' => $review->product->id,
+                    'name' => $review->product->name,
+                    'image' => $review->product->image ? asset('storage/build/assets/' . $review->product->image) : null,
+                ],
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'status' => $order->order_status,
+                ]
+            ];
+
+            return $this->sendResponse($reviewData, 'User review for order retrieved successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->sendError('Order not found', [], 404);
+        } catch (Exception $e) {
+            Log::error('Error getting user review for order: ' . $e->getMessage());
+            return $this->sendError('Failed to retrieve review', [], 500);
+        }
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/orders/{order_id}/reviews",
+     *     tags={"Product Reviews"},
+     *     summary="Delete my review for a specific order",
+     *     description="Delete user's review for a specific order and update product rating cache",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Review deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Review not found"
+     *     )
+     * )
+     */
+    public function deleteMyReviewForOrder(Request $request, $orderId)
+    {
+        try {
+            $user = $this->checkFirebaseUser($request);
+            if (!$user) {
+                return $this->sendError('Unauthorized', [], 401);
+            }
+
+            $order = Order::findOrFail($orderId);
+
+            // Check if user owns this order
+            if ($order->host_id !== $user->customer->id ?? null) {
+                return $this->sendError('You can only delete reviews from your own orders', [], 403);
+            }
+
+            // Find user's review for this order
+            $review = ProductReview::where('user_id', $user->id)
+                ->where('order_id', $orderId)
+                ->first();
+
+            if (!$review) {
+                return $this->sendError('No review found for this order', [], 404);
+            }
+
+            $productId = $review->product_id;
+
+            // Delete media files if exists
+            if ($review->media_files) {
+                foreach ($review->media_files as $mediaFile) {
+                    if (isset($mediaFile['path'])) {
+                        Storage::disk('public')->delete($mediaFile['path']);
+                    }
+                }
+            }
+
+            // Delete the review
+            $review->delete();
+
+            // Update product rating cache
+            $product = Product::find($productId);
+            if ($product) {
+                $product->updateRatingCache();
+            }
+
+            return $this->sendResponse([], 'Review deleted successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->sendError('Order not found', [], 404);
+        } catch (Exception $e) {
+            Log::error('Error deleting review for order: ' . $e->getMessage());
+            return $this->sendError('Failed to delete review', [], 500);
+        }
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/orders/{order_id}/reviews",
+     *     tags={"Product Reviews"},
+     *     summary="Update my review for a specific order",
+     *     description="Update user's review rating and text for a specific order",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"rating"},
+     *             @OA\Property(property="rating", type="integer", minimum=1, maximum=5, example=4),
+     *             @OA\Property(property="review_text", type="string", maxLength=1000, example="Updated review text"),
+     *             @OA\Property(property="media_files", type="array", @OA\Items(type="string"), maxItems=5)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Review updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Review not found"
+     *     )
+     * )
+     */
+    public function updateMyReviewForOrder(Request $request, $orderId)
+    {
+        try {
+            $user = $this->checkFirebaseUser($request);
+            if (!$user) {
+                return $this->sendError('Unauthorized', [], 401);
+            }
+
+            // Validate request data
+            $validator = Validator::make($request->all(), [
+                'rating' => 'required|integer|min:1|max:5',
+                'review_text' => 'nullable|string|max:1000',
+                'media_files' => 'nullable|array|max:5',
+                'media_files.*' => 'string'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed', $validator->errors(), 400);
+            }
+
+            $order = Order::findOrFail($orderId);
+
+            // Check if user owns this order
+            if ($order->host_id !== $user->customer->id ?? null) {
+                return $this->sendError('You can only update reviews from your own orders', [], 403);
+            }
+
+            // Find user's review for this order
+            $review = ProductReview::where('user_id', $user->id)
+                ->where('order_id', $orderId)
+                ->first();
+
+            if (!$review) {
+                return $this->sendError('No review found for this order', [], 404);
+            }
+
+            // Prepare media files data
+            $mediaFiles = null;
+            if ($request->has('media_files') && is_array($request->media_files)) {
+                $mediaFiles = [];
+                foreach ($request->media_files as $filePath) {
+                    if (Storage::disk('public')->exists($filePath)) {
+                        $mediaFiles[] = [
+                            'path' => $filePath,
+                            'url' => asset('storage/' . $filePath),
+                            'type' => $this->getFileType($filePath),
+                            'name' => basename($filePath)
+                        ];
+                    }
+                }
+            }
+
+            // Update review
+            $review->update([
+                'rating' => $request->rating,
+                'review_text' => $request->review_text,
+                'media_files' => $mediaFiles,
+            ]);
+
+            // Update product rating cache
+            $product = Product::find($review->product_id);
+            if ($product) {
+                $product->updateRatingCache();
+
+                // Get updated summary
+                $summary = [
+                    'average_rating' => (float) $product->avg_rating,
+                    'total_reviews' => $product->review_count,
+                    'rating_distribution' => $product->rating_distribution
+                ];
+            }
+
+            // Prepare response
+            $reviewData = [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'review_text' => $review->review_text,
+                'reviewed_at' => $review->created_at->format('Y-m-d H:i:s'),
+                'updated_at' => $review->updated_at->format('Y-m-d H:i:s'),
+                'media_files' => $this->formatMediaFiles($review->media_files),
+                'product' => [
+                    'id' => $review->product->id,
+                    'name' => $review->product->name,
+                ],
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                ]
+            ];
+
+            $responseData = [
+                'review' => $reviewData,
+                'summary' => $summary ?? null
+            ];
+
+            return $this->sendResponse($responseData, 'Review updated successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->sendError('Order not found', [], 404);
+        } catch (Exception $e) {
+            Log::error('Error updating review for order: ' . $e->getMessage());
+            return $this->sendError('Failed to update review', [], 500);
+        }
     }
 
     private function checkFirebaseUser(Request $request)
