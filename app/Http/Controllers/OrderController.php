@@ -884,6 +884,26 @@ class OrderController extends Controller
         }
         return $totalDiscount;
     }
+
+    /**
+     * Calculate discount for admin order detail based on total_price
+     * @param object $order Order object with vouchers
+     * @param float $total_price Total price from order details
+     * @return float Total discount amount
+     */
+    function calculateDiscountForAdmin($order, $total_price)
+    {
+        $totalDiscount = 0;
+        foreach ($order->vouchers as $voucher) {
+            if ($voucher->apply_type == 'shipping_fee') continue;
+            if ($voucher->discount_type == 'percent') {
+                $totalDiscount += $total_price * $voucher->discount_percent / 100;
+            } else {
+                $totalDiscount += $voucher->discount_amount;
+            }
+        }
+        return $totalDiscount;
+    }
     /**
      * @OA\Post(
      *     path="/api/cart/addProductToCart",
@@ -2101,8 +2121,8 @@ class OrderController extends Controller
                 'date_created' => $order->created_at,
                 'host_id' => $order->host_id,
                 'status' => $order->order_status,
-                'order_total' => $order->order_total - $this->calculateDiscount($order),
-                'count_product' => $orderDetails->count() ?? 0,
+                'order_total' => $order->order_total,
+                'count_product' => $orderDetails->sum('quantity') ?? 0,
                 'order_detail' => [],
                 
                 // Customer information
@@ -2135,7 +2155,6 @@ class OrderController extends Controller
                     'payment_link' => $order->payment_link,
                 ],
                 
-                'discount' => $this->calculateDiscount($order),
                 'note' => $order->note,
                 
                 // Feedback information
@@ -2208,6 +2227,8 @@ class OrderController extends Controller
                 ];
             }
             $data['total_price'] = $total_price;
+            $data['discount'] = $this->calculateDiscountForAdmin($order, $total_price);
+            
 
             return response()->json([
                 'message' => 'Order detail fetched successfully.',
