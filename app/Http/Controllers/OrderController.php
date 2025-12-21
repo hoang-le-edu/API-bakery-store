@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\Team;
 use App\Models\User;
@@ -120,6 +121,7 @@ class OrderController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
     /**
      * @OA\Post(
      *     path="/api/cart/createCart",
@@ -1876,9 +1878,26 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'order_status' => 'required',
+            'note' => 'nullable|string',
         ]);
 
         $order = Order::findOrFail($id);
+
+        // Save old status for history tracking
+        $oldStatus = $order->order_status;
+        $newStatus = $validated['order_status'];
+
+        // Only create history if status actually changed
+        if ($oldStatus !== $newStatus) {
+            // Create status history record
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'status' => $newStatus,
+                'changed_by' => auth()->id(),
+                'note' => $validated['note'] ?? null,
+            ]);
+        }
+
         $order->update($validated);
 
         return response()->json(['message' => 'Order updated successfully . ', 'data' => $order]);
@@ -2016,5 +2035,188 @@ class OrderController extends Controller
             'message' => 'Order created successfully.',
             'data' => $order,
         ], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/admin/orders/detail/{id}",
+     *     tags={"Orders"},
+     *     summary="Get order detail for admin",
+     *     description="Get detailed order information including products, customer info, vouchers, creator, and status history",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order detail retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Order detail fetched successfully."),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="order_id", type="string"),
+     *                 @OA\Property(property="order_number", type="string"),
+     *                 @OA\Property(property="status", type="string"),
+     *                 @OA\Property(property="order_total", type="number"),
+     *                 @OA\Property(property="customer_info", type="object"),
+     *                 @OA\Property(property="order_detail", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="vouchers", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="creator", type="object"),
+     *                 @OA\Property(property="status_history", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Order not found")
+     * )
+     */
+    public function adminGetOrderDetail(Request $request, $orderId)
+    {
+        try {
+            $order = Order::with(['creator', 'host', 'team', 'vouchers', 'statusHistories.changedBy'])->findOrFail($orderId);
+
+            // Get the host customer's order details
+            $customer_id = $order->host_id;
+            $orderCustomer = $order->customers()->where('customer_id', $customer_id)->first();
+
+            if (!$orderCustomer) {
+                return response()->json(['message' => 'Order customer relationship not found.'], 404);
+            }
+
+            // Get order details
+            $orderDetails = $orderCustomer->pivot->orderDetails()
+                ->where('parent_id', null)
+                ->with('toppings.product')
+                ->get();
+
+            $team = $order->team;
+            $customer = $order->host;
+
+            $data = [
+                'type' => $order->type,
+                'order_number' => !empty($order->custom_name) ? $order->custom_name : $order->order_number,
+                'order_id' => $order->id,
+                'date_created' => $order->created_at,
+                'host_id' => $order->host_id,
+                'status' => $order->order_status,
+                'order_total' => $order->order_total - $this->calculateDiscount($order),
+                'count_product' => $orderDetails->count() ?? 0,
+                'order_detail' => [],
+                
+                // Customer information
+                'customer_info' => [
+                    'customer_id' => $customer->id,
+                    'customer_name' => $order->receiver_name,
+                    'customer_phone' => $customer->phone_number,
+                    'customer_email' => $customer->email,
+                    'customer_level' => $customer->rank ?? 'N/A',
+                ],
+                
+                // Shipping information
+                'shipping_info' => [
+                    'from_name' => $team->name ?? 'N/A',
+                    'from_address' => $team->address ?? 'N/A',
+                    'to_name' => $order->receiver_name,
+                    'to_address' => $order->receiver_address,
+                    'receiver_phone' => $order->receiver_phone,
+                    'province' => $order->province,
+                    'district' => $order->district,
+                    'ward' => $order->ward,
+                    'street' => $order->street,
+                    'shipping_fee' => $order->shipping_fee,
+                ],
+                
+                // Payment information
+                'payment_info' => [
+                    'payment_method' => $order->payment_method,
+                    'payment_status' => $order->payment_status ?? 'pending',
+                    'payment_link' => $order->payment_link,
+                ],
+                
+                'discount' => $this->calculateDiscount($order),
+                'note' => $order->note,
+                
+                // Feedback information
+                'feedback' => [
+                    'rating' => $order->rate ?? 0,
+                    'content' => $order->customer_feedback,
+                    'feedback_time' => $order->updated_at,
+                ],
+                
+                // Vouchers
+                'vouchers' => $order->vouchers->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->id,
+                        'voucher_code' => $voucher->vourcher_code,
+                        'discount_amount' => $voucher->discount_amount,
+                        'discount_percent' => $voucher->discount_percent,
+                        'discount_type' => $voucher->discount_type,
+                        'apply_type' => $voucher->apply_type,
+                    ];
+                }),
+                
+                // Creator information
+                'creator_info' => $order->creator ? [
+                    'creator_id' => $order->creator->id,
+                    'creator_name' => $order->creator->name,
+                    'creator_email' => $order->creator->email,
+                    'created_at' => $order->created_at,
+                ] : null,
+                
+                // Status history
+                'status_history' => $order->statusHistories->map(function ($history) {
+                    return [
+                        'id' => $history->id,
+                        'status' => $history->status,
+                        'changed_at' => $history->created_at,
+                        'changed_by' => $history->changedBy ? [
+                            'id' => $history->changedBy->id,
+                            'name' => $history->changedBy->name,
+                            'email' => $history->changedBy->email,
+                        ] : null,
+                        'note' => $history->note,
+                    ];
+                }),
+            ];
+
+            // Build order details
+            $total_price = 0;
+            foreach ($orderDetails as $orderDetail) {
+                $total_price += $orderDetail->total_price;
+                $data['order_detail'][] = [
+                    'order_detail_number' => $orderDetail->order_detail_number,
+                    'product_id' => $orderDetail->product->id,
+                    'product_name' => $orderDetail->product->name,
+                    'product_price' => $orderDetail->product->price,
+                    'size' => $orderDetail->size,
+                    'quantity' => $orderDetail->quantity,
+                    'image' => $orderDetail->product->image ? asset('storage/' . $orderDetail->product->image) : asset('resources/assets/images/empty-image.jpg'),
+                    'note' => $orderDetail->note,
+                    'total_price' => $orderDetail->total_price,
+                    'count_topping' => $orderDetail->toppings->count(),
+                    'toppings' => $orderDetail->toppings->map(function ($topping) {
+                        return [
+                            'topping_id' => $topping->id,
+                            'name' => $topping->product->name,
+                            'price' => $topping->product->price,
+                            'quantity' => $topping->quantity,
+                            'total_price' => $topping->total_price,
+                        ];
+                    }),
+                ];
+            }
+            $data['total_price'] = $total_price;
+
+            return response()->json([
+                'message' => 'Order detail fetched successfully.',
+                'data' => $data
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }
