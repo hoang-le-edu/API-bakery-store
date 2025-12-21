@@ -70,4 +70,9 @@ class Order extends Model
     public function vouchers() {
         return $this->belongsToMany(Voucher::class, 'order_voucher');
     }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
+    }
 }
