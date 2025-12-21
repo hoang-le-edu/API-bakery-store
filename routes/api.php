@@ -122,6 +122,11 @@ Route::middleware(['firebase.auth'])->group(function () {
     Route::get('/orders/{order_id}/reviewable-products', [\App\Http\Controllers\ProductReviewController::class, 'getReviewableProducts']);
     Route::post('/reviews/upload-media', [\App\Http\Controllers\ProductReviewController::class, 'uploadMedia']);
 
+    // Order-based Review Management API
+    Route::get('/orders/{order_id}/my-review', [\App\Http\Controllers\ProductReviewController::class, 'getMyReviewForOrder']);
+    Route::delete('/orders/{order_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'deleteMyReviewForOrder']);
+    Route::put('/orders/{order_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'updateMyReviewForOrder']);
+
     //PayOs api
     Route::post('/payos/create-payment-link', [\App\Http\Controllers\PayOSController::class, 'createPayment']);
 
