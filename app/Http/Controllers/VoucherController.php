@@ -5,44 +5,100 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreVoucherRequest;
 use App\Http\Requests\UpdateVoucherRequest;
 use App\Models\Voucher;
+use App\Services\VoucherService;
 use Illuminate\Http\Request;
 
 class VoucherController extends BaseController
 {
-    /**
-     * Display a listing of vouchers.
-     */
-    public function index()
+    protected $voucherService;
+
+    public function __construct(VoucherService $voucherService)
     {
-        $vouchers = Voucher::all();
-        return response()->json($vouchers);
+        $this->voucherService = $voucherService;
     }
 
     /**
-     * Store a newly created voucher in storage.
+     * Display a listing of vouchers for admin.
+     * GET /api/admin/vouchers
+     */
+    public function index()
+    {
+        $vouchers = Voucher::with('creator:id,name,email')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($voucher) {
+                $used = $this->voucherService->calculateUsedVouchers($voucher);
+                return [
+                    'id' => $voucher->id,
+                    'vourcher_code' => $voucher->vourcher_code,
+                    'status' => $voucher->status,
+                    'start_date' => $voucher->start_date,
+                    'end_date' => $voucher->end_date,
+                    'discount_type' => $voucher->discount_type,
+                    'discount_amount' => $voucher->discount_amount,
+                    'discount_percent' => $voucher->discount_percent,
+                    'limit' => $voucher->limit,
+                    'used' => $used,
+                    'remaining' => max(0, $voucher->limit - $used),
+                    'minimum' => $voucher->minimum,
+                    'limit_per_order' => $voucher->limit_per_order,
+                    'apply_type' => $voucher->apply_type,
+                    'created_by' => $voucher->creator,
+                    'created_at' => $voucher->created_at,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $vouchers
+        ], 200);
+    }
+
+    /**
+     * Store a newly created voucher in storage (Admin)
+     * POST /api/admin/vouchers
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'vourcher_code' => 'required|string|unique:vouchers|max:255',
             'status' => 'required|in:active,inactive',
-            'start_date' => 'required|date|before:end_date',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'discount_type' => 'required|in:percent,fixed',
             'discount_amount' => 'required_if:discount_type,fixed|numeric|min:0',
             'discount_percent' => 'required_if:discount_type,percent|numeric|min:0|max:100',
             'limit' => 'required|integer|min:1',
-            'teams_id' => 'required|array|min:1', // Ensure it's a list
-            'teams_id.*' => 'exists:teams,id',
             'apply_type' => 'required|in:shipping_fee,discount',
             'limit_per_order' => 'nullable|numeric|min:0',
             'minimum' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
         ]);
-        $validated['config'] = '{}';
-        $voucher = Voucher::create($validated);
-        $voucher->teams()->attach($validated['teams_id']);
 
-        return response()->json(['message' => 'Voucher created successfully.', 'data' => $voucher], 201);
+        // Set default values
+        if ($validated['discount_type'] === 'fixed') {
+            $validated['discount_percent'] = 0;
+        } else {
+            $validated['discount_amount'] = 0;
+        }
+
+        $validated['config'] = json_encode([
+            'description' => $validated['description'] ?? ''
+        ]);
+
+        // Get current user as creator
+        $user = $this->checkFirebaseUser($request);
+        if ($user) {
+            $validated['created_by'] = $user->id;
+        }
+
+        $voucher = Voucher::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher created successfully.',
+            'data' => $voucher
+        ], 201);
     }
     /**
      * @OA\Get(
@@ -102,7 +158,7 @@ class VoucherController extends BaseController
             ->get();
 
         $return_data = [];
-        foreach($vouchers as $voucher) {
+        foreach ($vouchers as $voucher) {
             $return_data[$voucher['apply_type']][] = [
                 'id' => $voucher['id'],
                 'voucher_code' => $voucher['vourcher_code'],
@@ -138,7 +194,7 @@ class VoucherController extends BaseController
             ->get();
 
         $return_data = [];
-        foreach($vouchers as $voucher) {
+        foreach ($vouchers as $voucher) {
             $return_data[] = [
                 'id' => $voucher['id'],
                 'voucher_code' => $voucher['vourcher_code'],
@@ -157,65 +213,154 @@ class VoucherController extends BaseController
             'data' => $return_data
         ], 200);
     }
+
+    /**
+     * Calculate how many times a voucher has been used
+     * Count only non-Draft and non-Cancelled orders
+     */
     public function calculateUsedVouchers($voucher)
     {
-        return 0;
+        // If $voucher is array (from query), convert to model
+        if (is_array($voucher)) {
+            $voucherId = $voucher['id'];
+            $voucher = Voucher::find($voucherId);
+
+            if (!$voucher) {
+                return 0;
+            }
+        }
+
+        // Use VoucherService for consistent calculation
+        return $this->voucherService->calculateUsedVouchers($voucher);
     }
+
     /**
-     * Display the specified voucher.
+     * Display the specified voucher (Admin)
+     * GET /api/admin/vouchers/{id}
      */
     public function show(string $id)
     {
-        $voucher = Voucher::findOrFail($id);
-        $voucher['teams_id'] = $voucher->teams()->pluck('id');
-        $voucher['minimum'] = (int) $voucher->minimum;
-        $voucher['limit_per_order'] = (int) $voucher->limit_per_order;
+        $voucher = Voucher::with('creator:id,name,email')->findOrFail($id);
+        $used = $this->voucherService->calculateUsedVouchers($voucher);
+
         return response()->json([
             'success' => true,
-            'data' => $voucher
+            'data' => [
+                'id' => $voucher->id,
+                'vourcher_code' => $voucher->vourcher_code,
+                'status' => $voucher->status,
+                'start_date' => $voucher->start_date,
+                'end_date' => $voucher->end_date,
+                'discount_type' => $voucher->discount_type,
+                'discount_amount' => $voucher->discount_amount,
+                'discount_percent' => $voucher->discount_percent,
+                'limit' => $voucher->limit,
+                'used' => $used,
+                'remaining' => max(0, $voucher->limit - $used),
+                'minimum' => $voucher->minimum,
+                'limit_per_order' => $voucher->limit_per_order,
+                'apply_type' => $voucher->apply_type,
+                'config' => $voucher->config,
+                'created_by' => $voucher->creator,
+                'created_at' => $voucher->created_at,
+                'updated_at' => $voucher->updated_at,
+            ]
         ], 200);
     }
 
     /**
-     * Update the specified voucher in storage.
+     * Update the specified voucher in storage (Admin)
+     * PUT /api/admin/vouchers/{id}
      */
     public function update(Request $request, string $id)
     {
-
         $validated = $request->validate([
             'vourcher_code' => 'nullable|string|unique:vouchers,vourcher_code,' . $id . '|max:255',
             'status' => 'nullable|in:active,inactive',
-            'start_date' => 'nullable|date|before:end_date',
-            'end_date' => 'nullable|date|after:start_date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'discount_type' => 'nullable|in:percent,fixed',
             'discount_amount' => 'nullable|numeric|min:0',
             'discount_percent' => 'nullable|numeric|min:0|max:100',
             'limit' => 'nullable|integer|min:1',
-            'apply_type' => 'required|in:shipping_fee,discount',
-            'limit_per_order' => 'nullable|integer|min:1',
-            'minimum' => 'nullable|integer|min:1',
-            'config' => 'nullable|json',
-            'teams_id' => 'nullable'
+            'apply_type' => 'nullable|in:shipping_fee,discount',
+            'limit_per_order' => 'nullable|numeric|min:0',
+            'minimum' => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
         ]);
+
         try {
             $voucher = Voucher::findOrFail($id);
-            $voucher->update($validated);
-            $voucher->teams()->sync($validated['teams_id']);
 
-            return response()->json(['message' => 'Voucher updated successfully.', 'data' => $voucher]);
+            // Update config if description provided
+            if (isset($validated['description'])) {
+                $config = json_decode($voucher->config ?? '{}', true);
+                $config['description'] = $validated['description'];
+                $validated['config'] = json_encode($config);
+                unset($validated['description']);
+            }
+
+            $voucher->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Voucher updated successfully.',
+                'data' => $voucher
+            ], 200);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * Remove the specified voucher from storage.
+     * Remove the specified voucher from storage (Admin)
+     * DELETE /api/admin/vouchers/{id}
      */
     public function destroy(string $id)
     {
-        $voucher = Voucher::findOrFail($id);
-        $voucher->delete();
+        try {
+            $voucher = Voucher::findOrFail($id);
+            $voucher->delete();
 
-        return response()->json(['message' => 'Voucher deleted successfully.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Voucher deleted successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle voucher status between active/inactive (Admin)
+     * PATCH /api/admin/vouchers/{id}/toggle-status
+     */
+    public function toggleStatus(string $id)
+    {
+        try {
+            $voucher = Voucher::findOrFail($id);
+            $newStatus = $voucher->status === 'active' ? 'inactive' : 'active';
+            $voucher->update(['status' => $newStatus]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Voucher status updated successfully.',
+                'data' => [
+                    'id' => $voucher->id,
+                    'status' => $voucher->status
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

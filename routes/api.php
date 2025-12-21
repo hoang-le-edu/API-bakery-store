@@ -85,11 +85,24 @@ Route::middleware(['firebase.auth'])->group(function () {
     Route::get('/ghn/districts', [GHNController::class, 'getDistricts']);
     Route::get('/ghn/wards', [GHNController::class, 'getWards']);
     Route::get('/ghn/shipping-fee', [GHNController::class, 'getShippingFee']);
+
+    // Admin Voucher Management Routes
+    Route::prefix('admin/vouchers')->group(function () {
+        Route::get('/', [VoucherController::class, 'index']); // List all vouchers
+        Route::post('/', [VoucherController::class, 'store']); // Create voucher
+        Route::get('/{id}', [VoucherController::class, 'show']); // Get voucher details
+        Route::put('/{id}', [VoucherController::class, 'update']); // Update voucher
+        Route::delete('/{id}', [VoucherController::class, 'destroy']); // Delete voucher
+        Route::patch('/{id}/toggle-status', [VoucherController::class, 'toggleStatus']); // Toggle active/inactive
+    });
+
+    // Legacy routes (kept for backward compatibility if needed)
     Route::get('/vouchers/loadCustomerVoucher', [VoucherController::class, 'loadVouchersByDateAndTeam']);
     Route::get('/vouchers/loadEmployeeVoucher', [VoucherController::class, 'loadVouchersByDateAndUser']);
+
     Route::post('/orders/proceed', [\App\Http\Controllers\OrderController::class, 'proceedOrder']);
     Route::post('/orders/status/{id}', [\App\Http\Controllers\OrderController::class, 'updateStatus']);
-//    orders
+    //    orders
     Route::get('/loadCustomerOrders', [\App\Http\Controllers\OrderController::class, 'loadCustomerOrders']);
     Route::get('/loadCustomerOrdersHistory', [\App\Http\Controllers\OrderController::class, 'loadCustomerOrdersHistory']);
     Route::get('/loadOrderDetail/{id}', [\App\Http\Controllers\OrderController::class, 'loadOrderDetail']);
@@ -136,8 +149,7 @@ Route::middleware(['firebase.auth'])->group(function () {
     });
 
     // ping-200
-    Route::get('ping-200-in', fn() => response()->json(['ok'=>true]));
-
+    Route::get('ping-200-in', fn() => response()->json(['ok' => true]));
 });
 
 Route::get('/customer/product/{id}', [ProductController::class, 'getProductDetail']);
@@ -163,8 +175,4 @@ Route::post('/firebase/signInWithCustomToken', [AuthenticationController::class,
 Route::post('/firebase/signInWithPassword', [AuthenticationController::class, 'firebaseSignInWithPasswordDocumentation']);
 
 // ping-200
-Route::get('ping-200-out', fn() => response()->json(['ok'=>true]));
-
-
-
-
+Route::get('ping-200-out', fn() => response()->json(['ok' => true]));

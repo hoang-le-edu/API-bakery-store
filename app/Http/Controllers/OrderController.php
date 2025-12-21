@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\VoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,12 @@ use Twilio\TwiML\Voice\Pay;
 
 class OrderController extends Controller
 {
+    protected $voucherService;
+
+    public function __construct(VoucherService $voucherService)
+    {
+        $this->voucherService = $voucherService;
+    }
     /**
      * @OA\Get(
      *     path="/api/admin/orders/all",
@@ -518,25 +525,9 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Customer not found")
      * )
      */
-    public function proceedOrder(Request $request)
+    public function proceedOrder(StoreOrderRequest $request)
     {
-        $validated = $request->validate([
-            'order_detail_ids' => 'required|array',
-            'order_detail_ids.*' => 'required|exists:order_details,id',
-            'receiver_name' => 'required|string|max:255',
-            'receiver_address' => 'required|string|max:255',
-            'payment_method' => 'required|in:Cash,Banking',
-            'voucher' => 'nullable|string',
-            'voucher_shipping' => 'nullable|string',
-            'note' => 'nullable|string',
-            'province' => 'required|string',
-            'district' => 'required|string',
-            'ward' => 'required|string',
-            'street' => 'required|string',
-            'phone_number' => 'required|string',
-            'shipping_fee' => 'required|numeric',
-            'discount_number' => 'nullable|numeric',
-        ]);
+        $validated = $request->validated();
 
         $user = $this->checkFirebaseUser($request);
 
@@ -579,11 +570,63 @@ class OrderController extends Controller
             return response()->json(['message' => 'No valid products selected.'], 400);
         }
 
-        // Calculate order total
-        $orderTotal = $selectedOrderDetails->sum('total_price') + $validated['shipping_fee'];
-        if (isset($validated['discount_number'])) {
-            $orderTotal -= $validated['discount_number'];
+        // Calculate base order totals
+        $subtotal = $selectedOrderDetails->sum('total_price');
+        $shippingFee = $validated['shipping_fee'];
+
+        // Validate and calculate voucher discounts SERVER-SIDE using voucher CODES
+        $productDiscount = 0;
+        $shippingDiscount = 0;
+        $appliedVouchers = [];
+
+        // Create temporary order object for validation
+        $tempOrder = new Order();
+        $tempOrder->order_total = $subtotal;
+        $tempOrder->shipping_fee = $shippingFee;
+
+        // Validate product discount voucher CODE
+        if (!empty($validated['voucher_code'])) {
+            $voucherResult = $this->voucherService->validateVoucherByCode(
+                $validated['voucher_code'],
+                $tempOrder,
+                'discount',
+                $selectedOrderDetails
+            );
+
+            if (!$voucherResult['valid']) {
+                return response()->json([
+                    'message' => 'Voucher validation failed',
+                    'error' => $voucherResult['message']
+                ], 422);
+            }
+
+            $productDiscount = $voucherResult['discount'];
+            $appliedVouchers[] = $voucherResult['voucher']->id; // Store voucher ID for attachment
         }
+
+        // Validate shipping voucher CODE
+        if (!empty($validated['voucher_shipping_code'])) {
+            $shippingResult = $this->voucherService->validateVoucherByCode(
+                $validated['voucher_shipping_code'],
+                $tempOrder,
+                'shipping_fee',
+                $selectedOrderDetails
+            );
+
+            if (!$shippingResult['valid']) {
+                return response()->json([
+                    'message' => 'Shipping voucher validation failed',
+                    'error' => $shippingResult['message']
+                ], 422);
+            }
+
+            $shippingDiscount = $shippingResult['discount'];
+            $appliedVouchers[] = $shippingResult['voucher']->id; // Store voucher ID for attachment
+        }
+
+        // Calculate final order total with validated discounts
+        $orderTotal = $subtotal + $shippingFee - $productDiscount - $shippingDiscount;
+        $orderTotal = max(0, $orderTotal); // Ensure non-negative
 
         // Create a new order for checkout
         $newOrder = Order::create([
@@ -651,18 +694,21 @@ class OrderController extends Controller
         $cartOrder->order_total = $remainingTotal;
         $cartOrder->save();
 
-        // Apply vouchers if provided
-        if (!empty($validated['voucher'])) {
-            $newOrder->vouchers()->attach($validated['voucher']);
-        }
-
-        if (!empty($validated['voucher_shipping'])) {
-            $newOrder->vouchers()->attach($validated['voucher_shipping']);
+        // Attach validated vouchers to order
+        if (!empty($appliedVouchers)) {
+            $newOrder->vouchers()->attach($appliedVouchers);
         }
 
         return response()->json([
             'message' => 'Order created successfully.',
-            'data' => $newOrder,
+            'data' => [
+                'order' => $newOrder,
+                'discounts' => [
+                    'product_discount' => $productDiscount,
+                    'shipping_discount' => $shippingDiscount,
+                    'total_discount' => $productDiscount + $shippingDiscount,
+                ],
+            ],
         ]);
     }
 
