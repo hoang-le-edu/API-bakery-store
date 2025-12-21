@@ -110,6 +110,18 @@ Route::middleware(['firebase.auth'])->group(function () {
     Route::post('/customer/giveFeedback', [\App\Http\Controllers\OrderController::class, 'giveFeedback']);
     Route::post('/customer/markReceived', [\App\Http\Controllers\OrderController::class, 'markReceived']);
 
+    // Recommendation API
+    Route::get('/recommendations/ai-suggestions', [\App\Http\Controllers\RecommendationController::class, 'getAIRecommendations']);
+    Route::get('/recommendations/category-based', [\App\Http\Controllers\RecommendationController::class, 'getCategoryBasedRecommendations']);
+    Route::get('/recommendations/customer-profile', [\App\Http\Controllers\RecommendationController::class, 'getCustomerProfile']);
+    Route::get('/recommendations/debug-profile', [\App\Http\Controllers\RecommendationController::class, 'debugCustomerProfile']);
+
+    // Product Reviews API
+    Route::post('/products/{product_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'createReview']);
+    Route::get('/reviews/my-reviews', [\App\Http\Controllers\ProductReviewController::class, 'getMyReviews']);
+    Route::get('/orders/{order_id}/reviewable-products', [\App\Http\Controllers\ProductReviewController::class, 'getReviewableProducts']);
+    Route::post('/reviews/upload-media', [\App\Http\Controllers\ProductReviewController::class, 'uploadMedia']);
+
     //PayOs api
     Route::post('/payos/create-payment-link', [\App\Http\Controllers\PayOSController::class, 'createPayment']);
 
@@ -157,6 +169,9 @@ Route::get('/customer/products/all', [ProductController::class, 'getProducts']);
 Route::get('/customer/products/search', [ProductController::class, 'searchProducts']);
 Route::get('/customer/products/{category}', [ProductController::class, 'getProducts']);
 Route::get('/categories/options/all', [\App\Http\Controllers\CategoryController::class, 'getCategoryJson']);
+
+// Public Product Reviews (no auth required)
+Route::get('/products/{product_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'getProductReviews']);
 
 Route::post('/auth/login', [AuthenticationController::class, 'login']);
 Route::post('/auth/login-firebase', [AuthenticationController::class, 'loginWithFirebase']);
