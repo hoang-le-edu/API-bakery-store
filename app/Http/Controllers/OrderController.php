@@ -2092,17 +2092,18 @@ class OrderController extends Controller
      *     @OA\Response(response=404, description="Order not found")
      * )
      */
-    public function adminGetOrderDetail(Request $request, $orderId)
+    /**
+     * Helper method to format order detail
+     */
+    private function formatOrderDetail($order)
     {
         try {
-            $order = Order::with(['creator', 'host', 'team', 'vouchers', 'statusHistories.changedBy'])->findOrFail($orderId);
-
             // Get the host customer's order details
             $customer_id = $order->host_id;
             $orderCustomer = $order->customers()->where('customer_id', $customer_id)->first();
 
             if (!$orderCustomer) {
-                return response()->json(['message' => 'Order customer relationship not found.'], 404);
+                return null;
             }
 
             // Get order details
@@ -2228,12 +2229,240 @@ class OrderController extends Controller
             }
             $data['total_price'] = $total_price;
             $data['discount'] = $this->calculateDiscountForAdmin($order, $total_price);
-            
+
+            return $data;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    public function adminGetOrderDetail(Request $request, $orderId)
+    {
+        try {
+            $order = Order::with(['creator', 'host', 'team', 'vouchers', 'statusHistories.changedBy'])->findOrFail($orderId);
+
+            $data = $this->formatOrderDetail($order);
+
+            if (!$data) {
+                return response()->json(['message' => 'Order customer relationship not found.'], 404);
+            }
 
             return response()->json([
                 'message' => 'Order detail fetched successfully.',
                 'data' => $data
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/admin/orders/search",
+     *     tags={"Admin Orders"},
+     *     summary="Search orders by ID, customer name, or date range",
+     *     description="Search orders with multiple filters: order ID, customer name, or creation date range. Returns detailed order information similar to order detail endpoint.",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=false,
+     *         description="Order ID (partial match supported)",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="customer_name",
+     *         in="query",
+     *         required=false,
+     *         description="Customer name (partial match supported)",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="date_from",
+     *         in="query",
+     *         required=false,
+     *         description="Start date for order creation (YYYY-MM-DD)",
+     *         @OA\Schema(type="string", format="date")
+     *     ),
+     *     @OA\Parameter(
+     *         name="date_to",
+     *         in="query",
+     *         required=false,
+     *         description="End date for order creation (YYYY-MM-DD)",
+     *         @OA\Schema(type="string", format="date")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Orders found successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Orders found successfully."),
+     *             @OA\Property(property="total", type="integer"),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="Invalid request parameters"),
+     *     @OA\Response(response=404, description="No orders found")
+     * )
+     */
+    public function searchAdminOrders(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'order_id' => 'nullable|string',
+                'customer_name' => 'nullable|string',
+                'date_from' => 'nullable|date_format:Y-m-d',
+                'date_to' => 'nullable|date_format:Y-m-d',
+            ]);
+
+            $query = Order::with(['creator', 'host', 'team', 'vouchers', 'statusHistories.changedBy', 'customers']);
+
+            // Filter by order ID (partial match)
+            if (!empty($validated['order_id'])) {
+                $query->where('id', 'like', '%' . $validated['order_id'] . '%')
+                      ->orWhere('order_number', 'like', '%' . $validated['order_id'] . '%');
+            }
+
+            // Filter by customer name (partial match)
+            if (!empty($validated['customer_name'])) {
+                $query->where('receiver_name', 'like', '%' . $validated['customer_name'] . '%')
+                      ->orWhereHas('host', function ($q) {
+                          $q->where('full_name', 'like', '%' . request('customer_name') . '%');
+                      });
+            }
+
+            // Filter by date range
+            if (!empty($validated['date_from'])) {
+                $query->whereDate('created_at', '>=', $validated['date_from']);
+            }
+
+            if (!empty($validated['date_to'])) {
+                $query->whereDate('created_at', '<=', $validated['date_to']);
+            }
+
+            // Execute query
+            $orders = $query->orderBy('created_at', 'desc')->get();
+
+            if ($orders->isEmpty()) {
+                return response()->json([
+                    'message' => 'No orders found matching the search criteria.',
+                    'total' => 0,
+                    'data' => []
+                ], 404);
+            }
+
+            // Format each order using the helper method
+            $formattedOrders = $orders->map(function ($order) {
+                return $this->formatOrderDetail($order);
+            })->filter(function ($item) {
+                return $item !== null;
+            })->values();
+
+            return response()->json([
+                'message' => 'Orders found successfully.',
+                'total' => $formattedOrders->count(),
+                'data' => $formattedOrders
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Invalid request parameters.',
+                'errors' => $e->errors()
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/admin/orders/customerInfo/{id}",
+     *     tags={"Admin Orders"},
+     *     summary="Get customer info by order ID",
+     *     description="Get full customer information including all their orders and feedback for a specific order",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID",
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Customer information retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="full_name", type="string"),
+     *                 @OA\Property(property="email", type="string"),
+     *                 @OA\Property(property="phone_number", type="string"),
+     *                 @OA\Property(property="date_registered", type="string"),
+     *                 @OA\Property(property="date_of_birth", type="string"),
+     *                 @OA\Property(property="gender", type="string"),
+     *                 @OA\Property(property="province", type="string"),
+     *                 @OA\Property(property="district", type="string"),
+     *                 @OA\Property(property="ward", type="string"),
+     *                 @OA\Property(property="street", type="string"),
+     *                 @OA\Property(property="customer_number", type="string"),
+     *                 @OA\Property(property="orders", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="current_order_feedback", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Order not found")
+     * )
+     */
+    public function getCustomerInfoByOrder($orderId)
+    {
+        try {
+            // Find order by ID
+            $order = Order::findOrFail($orderId);
+
+            // Get the first customer associated with this order
+            $customer = $order->customers()->first();
+
+            if (!$customer) {
+                return response()->json(['message' => 'Customer not found for this order.'], 404);
+            }
+
+            // Get all orders for this customer with their feedback
+            $customerOrders = $customer->orders()
+                ->with('creator')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($ord) {
+                    return [
+                        'id' => $ord->id,
+                        'order_number' => $ord->order_number,
+                        'order_status' => $ord->order_status,
+                        'order_total' => $ord->order_total,
+                        'payment_method' => $ord->payment_method,
+                        'payment_status' => $ord->payment_status,
+                        'created_at' => $ord->created_at,
+                        'feedback' => $ord->customer_feedback,
+                        'rating' => $ord->rate
+                    ];
+                });
+
+            // Build response with full customer info
+            $data = [
+                'id' => $customer->id,
+                'full_name' => $customer->full_name,
+                'email' => $customer->email,
+                'phone_number' => $customer->phone_number,
+                'date_registered' => $customer->date_registered,
+                'date_of_birth' => $customer->date_of_birth,
+                'gender' => $customer->gender,
+                'province' => $customer->province,
+                'district' => $customer->district,
+                'ward' => $customer->ward,
+                'street' => $customer->street,
+                'customer_number' => $customer->customer_number,
+                'orders' => $customerOrders,
+                'current_order_feedback' => $order->customer_feedback
+            ];
+
+            return response()->json(['data' => $data]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Order not found.'], 404);
         } catch (\Exception $e) {
