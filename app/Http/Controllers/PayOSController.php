@@ -82,29 +82,17 @@ class PayOSController extends Controller
             }
 
             if($order->payment_link) {
-                // Get payment info to retrieve QR code
-                try {
-                    $orderCode = intVal(str_replace('ORD', '', $order->order_number));
-                    $paymentInfo = $this->payos->getPaymentLinkInformation($orderCode);
-                    
-                    return response()->json([
-                        "error" => 0,
-                        "message" => "Success",
-                        "checkoutUrl" => $order->payment_link,
-                        "qrCode" => $paymentInfo["qrCode"] ?? null,
-                        "paymentLinkId" => $paymentInfo["id"] ?? null,
-                        "accountNumber" => $paymentInfo["accountNumber"] ?? null,
-                        "accountName" => $paymentInfo["accountName"] ?? null,
-                        "amount" => $paymentInfo["amount"] ?? null,
-                    ]);
-                } catch (\Throwable $th) {
-                    // If can't get payment info, just return checkout URL
-                    return response()->json([
-                        "error" => 0,
-                        "message" => "Success",
-                        "checkoutUrl" => $order->payment_link
-                    ]);
-                }
+                // Return saved payment data from database
+                return response()->json([
+                    "error" => 0,
+                    "message" => "Success",
+                    "checkoutUrl" => $order->payment_link,
+                    "qrCode" => $order->payment_qr_code,
+                    "paymentLinkId" => $order->payment_link_id,
+                    "accountNumber" => $order->payment_account_number,
+                    "accountName" => $order->payment_account_name,
+                    "amount" => $order->order_total,
+                ]);
             }
 
             // Initialize PayOS with your credentials
@@ -120,8 +108,15 @@ class PayOSController extends Controller
 
             try {
                 $response = $this->payos->createPaymentLink($paymentData);
+                
+                // Save payment data to database
                 $order->payment_link = $response["checkoutUrl"];
+                $order->payment_qr_code = $response["qrCode"] ?? null;
+                $order->payment_link_id = $response["paymentLinkId"] ?? null;
+                $order->payment_account_number = $response["accountNumber"] ?? null;
+                $order->payment_account_name = $response["accountName"] ?? null;
                 $order->save();
+                
                 return response()->json([
                     "error" => 0,
                     "message" => "Success",
@@ -159,22 +154,12 @@ class PayOSController extends Controller
             }
 
             if($order->payment_link) {
-                // Get payment info to retrieve QR code
-                try {
-                    $orderCode = intVal(str_replace('ORD', '', $order->order_number));
-                    $paymentInfo = $this->payos->getPaymentLinkInformation($orderCode);
-                    
-                    return [
-                        "success" => true,
-                        "checkoutUrl" => $order->payment_link,
-                        "qrCode" => $paymentInfo["qrCode"] ?? null,
-                    ];
-                } catch (\Throwable $th) {
-                    return [
-                        "success" => true,
-                        "checkoutUrl" => $order->payment_link
-                    ];
-                }
+                // Return saved payment data from database
+                return [
+                    "success" => true,
+                    "checkoutUrl" => $order->payment_link,
+                    "qrCode" => $order->payment_qr_code,
+                ];
             }
             // Initialize PayOS with your credentials
             $orderCode = intVal(str_replace('ORD', '', $order->order_number));
@@ -189,8 +174,15 @@ class PayOSController extends Controller
 
             try {
                 $response = $this->payos->createPaymentLink($paymentData);
+                
+                // Save payment data to database
                 $order->payment_link = $response["checkoutUrl"];
+                $order->payment_qr_code = $response["qrCode"] ?? null;
+                $order->payment_link_id = $response["paymentLinkId"] ?? null;
+                $order->payment_account_number = $response["accountNumber"] ?? null;
+                $order->payment_account_name = $response["accountName"] ?? null;
                 $order->save();
+                
                 return [
                     "success" => true,
                     "checkoutUrl" => $response["checkoutUrl"],
