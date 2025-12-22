@@ -288,7 +288,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Orders fetched successfully.',
-            'data' => $return_data,
+            'data' => empty($return_data) ? (object)[] : $return_data,
         ]);
     }
     public function loadCustomerOrdersHistory(Request $request)
@@ -2125,7 +2125,7 @@ class OrderController extends Controller
                 'order_total' => $order->order_total,
                 'count_product' => $orderDetails->sum('quantity') ?? 0,
                 'order_detail' => [],
-                
+
                 // Customer information
                 'customer_info' => [
                     'customer_id' => $customer->id,
@@ -2134,7 +2134,7 @@ class OrderController extends Controller
                     'customer_email' => $customer->email,
                     'customer_level' => $customer->rank ?? 'N/A',
                 ],
-                
+
                 // Shipping information
                 'shipping_info' => [
                     'from_name' => $team->name ?? 'N/A',
@@ -2148,23 +2148,23 @@ class OrderController extends Controller
                     'street' => $order->street,
                     'shipping_fee' => $order->shipping_fee,
                 ],
-                
+
                 // Payment information
                 'payment_info' => [
                     'payment_method' => $order->payment_method,
                     'payment_status' => $order->payment_status ?? 'pending',
                     'payment_link' => $order->payment_link,
                 ],
-                
+
                 'note' => $order->note,
-                
+
                 // Feedback information
                 'feedback' => [
                     'rating' => $order->rate ?? 0,
                     'content' => $order->customer_feedback,
                     'feedback_time' => $order->updated_at,
                 ],
-                
+
                 // Vouchers
                 'vouchers' => $order->vouchers->map(function ($voucher) {
                     return [
@@ -2176,7 +2176,7 @@ class OrderController extends Controller
                         'apply_type' => $voucher->apply_type,
                     ];
                 }),
-                
+
                 // Creator information
                 'creator_info' => $order->creator ? [
                     'creator_id' => $order->creator->id,
@@ -2184,7 +2184,7 @@ class OrderController extends Controller
                     'creator_email' => $order->creator->email,
                     'created_at' => $order->created_at,
                 ] : null,
-                
+
                 // Status history
                 'status_history' => $order->statusHistories->map(function ($history) {
                     return [
@@ -2321,15 +2321,15 @@ class OrderController extends Controller
             // Filter by order ID (partial match)
             if (!empty($validated['order_id'])) {
                 $query->where('id', 'like', '%' . $validated['order_id'] . '%')
-                      ->orWhere('order_number', 'like', '%' . $validated['order_id'] . '%');
+                    ->orWhere('order_number', 'like', '%' . $validated['order_id'] . '%');
             }
 
             // Filter by customer name (partial match)
             if (!empty($validated['customer_name'])) {
                 $query->where('receiver_name', 'like', '%' . $validated['customer_name'] . '%')
-                      ->orWhereHas('host', function ($q) {
-                          $q->where('full_name', 'like', '%' . request('customer_name') . '%');
-                      });
+                    ->orWhereHas('host', function ($q) {
+                        $q->where('full_name', 'like', '%' . request('customer_name') . '%');
+                    });
             }
 
             // Filter by date range
