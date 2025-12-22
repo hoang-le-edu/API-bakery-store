@@ -24,6 +24,8 @@ const wards = {
 
 const payment = {
     paymentLink: null,
+    qrCode: null,
+    paymentData: null,
     loading: false
 }
 
@@ -99,6 +101,13 @@ export const paymentReducer = (state = payment, action) => {
             return {
                 ...state,
                 paymentLink: action.payload.checkoutUrl,
+                qrCode: action.payload.qrCode,
+                paymentData: {
+                    accountNumber: action.payload.accountNumber,
+                    accountName: action.payload.accountName,
+                    amount: action.payload.amount,
+                    paymentLinkId: action.payload.paymentLinkId,
+                },
                 loading: false,
             };
 
@@ -106,6 +115,8 @@ export const paymentReducer = (state = payment, action) => {
             return {
                 ...state,
                 paymentLink: null,
+                qrCode: null,
+                paymentData: null,
                 loading: false,
             };
 
