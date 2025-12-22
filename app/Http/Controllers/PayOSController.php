@@ -31,7 +31,7 @@ class PayOSController extends Controller
      *     path="/api/payos/create-payment-link",
      *     tags={"Payment"},
      *     summary="Create PayOS payment link",
-     *     description="Create a payment link for order using PayOS",
+     *     description="Create a payment link for order using PayOS. Returns checkout URL and QR code for payment.",
      *     security={{"firebaseAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -46,7 +46,12 @@ class PayOSController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="error", type="integer", example=0),
      *             @OA\Property(property="message", type="string", example="Success"),
-     *             @OA\Property(property="checkoutUrl", type="string", example="https://pay.payos.vn/web/...")
+     *             @OA\Property(property="checkoutUrl", type="string", example="https://pay.payos.vn/web/..."),
+     *             @OA\Property(property="qrCode", type="string", example="data:image/png;base64,iVBORw0KGgo..."),
+     *             @OA\Property(property="paymentLinkId", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
+     *             @OA\Property(property="accountNumber", type="string", example="1234567890"),
+     *             @OA\Property(property="accountName", type="string", example="NGUYEN VAN A"),
+     *             @OA\Property(property="amount", type="integer", example=50000)
      *         )
      *     ),
      *     @OA\Response(response=401, description="Unauthorized"),
@@ -77,11 +82,29 @@ class PayOSController extends Controller
             }
 
             if($order->payment_link) {
-                return response()->json([
-                    "error" => 0,
-                    "message" => "Success",
-                    "checkoutUrl" => $order->payment_link
-                ]);
+                // Get payment info to retrieve QR code
+                try {
+                    $orderCode = intVal(str_replace('ORD', '', $order->order_number));
+                    $paymentInfo = $this->payos->getPaymentLinkInformation($orderCode);
+                    
+                    return response()->json([
+                        "error" => 0,
+                        "message" => "Success",
+                        "checkoutUrl" => $order->payment_link,
+                        "qrCode" => $paymentInfo["qrCode"] ?? null,
+                        "paymentLinkId" => $paymentInfo["id"] ?? null,
+                        "accountNumber" => $paymentInfo["accountNumber"] ?? null,
+                        "accountName" => $paymentInfo["accountName"] ?? null,
+                        "amount" => $paymentInfo["amount"] ?? null,
+                    ]);
+                } catch (\Throwable $th) {
+                    // If can't get payment info, just return checkout URL
+                    return response()->json([
+                        "error" => 0,
+                        "message" => "Success",
+                        "checkoutUrl" => $order->payment_link
+                    ]);
+                }
             }
 
             // Initialize PayOS with your credentials
@@ -102,7 +125,12 @@ class PayOSController extends Controller
                 return response()->json([
                     "error" => 0,
                     "message" => "Success",
-                    "checkoutUrl" => $response["checkoutUrl"]
+                    "checkoutUrl" => $response["checkoutUrl"],
+                    "qrCode" => $response["qrCode"] ?? null,
+                    "paymentLinkId" => $response["paymentLinkId"] ?? null,
+                    "accountNumber" => $response["accountNumber"] ?? null,
+                    "accountName" => $response["accountName"] ?? null,
+                    "amount" => $response["amount"] ?? null,
                 ]);
             } catch (\Throwable $th) {
                 \Illuminate\Support\Facades\Log::debug($th->getMessage());
@@ -131,10 +159,22 @@ class PayOSController extends Controller
             }
 
             if($order->payment_link) {
-                return [
-                    "success" => true,
-                    "checkoutUrl" => $order->payment_link
-                ];
+                // Get payment info to retrieve QR code
+                try {
+                    $orderCode = intVal(str_replace('ORD', '', $order->order_number));
+                    $paymentInfo = $this->payos->getPaymentLinkInformation($orderCode);
+                    
+                    return [
+                        "success" => true,
+                        "checkoutUrl" => $order->payment_link,
+                        "qrCode" => $paymentInfo["qrCode"] ?? null,
+                    ];
+                } catch (\Throwable $th) {
+                    return [
+                        "success" => true,
+                        "checkoutUrl" => $order->payment_link
+                    ];
+                }
             }
             // Initialize PayOS with your credentials
             $orderCode = intVal(str_replace('ORD', '', $order->order_number));
@@ -153,7 +193,8 @@ class PayOSController extends Controller
                 $order->save();
                 return [
                     "success" => true,
-                    "checkoutUrl" => $response["checkoutUrl"]
+                    "checkoutUrl" => $response["checkoutUrl"],
+                    "qrCode" => $response["qrCode"] ?? null,
                 ];
             } catch (\Throwable $th) {
                 return response()->json([
