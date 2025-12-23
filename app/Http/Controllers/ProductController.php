@@ -82,6 +82,17 @@ class ProductController extends BaseController
         $topping_data = [];
         $prev_category_id = null;
         foreach ($products as $product) {
+            // Get image URL: use first image from images() if exists, else fallback to product_image
+            $image_url = null;
+            $productModel = Product::with('images')->find($product->product_id);
+            if ($productModel && $productModel->images && $productModel->images->count() > 0) {
+                // Use the first image's path
+                $image_url = asset('storage/' . $productModel->images->first()->image_path);
+            } elseif (!empty($product->product_image)) {
+                // Fallback to product_image field (if it is a path)
+                $image_url = asset('storage/' . $product->product_image);
+            }
+
             if ($product->is_topping === 1) {
                 if ($prev_category_id != $product->category_id) {
                     $topping_data[$product->category_id] = [
@@ -97,6 +108,7 @@ class ProductController extends BaseController
                     'product_price' => $product->product_price,
                     'avg_rating' => (float) $product->avg_rating,
                     'review_count' => $product->review_count,
+                    'product_image_url' => $image_url,
                 ];
             } else {
                 if ($prev_category_id != $product->category_id) {
@@ -115,6 +127,7 @@ class ProductController extends BaseController
                     'product_price' => $product->product_price,
                     'avg_rating' => (float) $product->avg_rating,
                     'review_count' => $product->review_count,
+                    'product_image_url' => $image_url,
                 ];
             }
         }
