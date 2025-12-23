@@ -371,7 +371,6 @@ class OrderController extends Controller
                     ->with('toppings.product') // Include topping product details
                     ->get();
 
-                $team = Team::find($order->team_id);
                 $customer = Customer::find($order->host_id);
                 $data = [
                     'type' => $order->type,
@@ -386,8 +385,6 @@ class OrderController extends Controller
                     'customer_name' => $order->receiver_name,
                     'customer_phone' => $customer->phone_number,
                     'customer_level' => $customer->rank,
-                    'from_name' => $team->name,
-                    'from_address' => $team->address,
                     'to_name' => $order->receiver_name,
                     'to_address' => $order->receiver_address,
                     'shipping_fee' => $order->shipping_fee,
