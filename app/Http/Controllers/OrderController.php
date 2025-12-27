@@ -1866,12 +1866,45 @@ class OrderController extends Controller
             'team_id' => 'nullable | uuid | exists:teams,id',
             'created_by' => 'nullable | uuid | exists:users,id',
             'toppings' => 'nullable | array',
+            'note' => 'nullable | string',
         ]);
 
         $order = Order::findOrFail($id);
+
+        // Kiểm tra xem order_status có thay đổi không
+        $oldStatus = $order->order_status;
+        $newStatus = $validated['order_status'] ?? $oldStatus;
+        $statusChanged = isset($validated['order_status']) && $oldStatus !== $newStatus;
+
+        // Cập nhật order
         $order->update($validated);
 
+        // Nếu trạng thái thay đổi, tạo history và gửi email
+        if ($statusChanged) {
+            // Tạo status history record
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'status' => $newStatus,
+                'changed_by' => auth()->id(),
+                'note' => $validated['note'] ?? null,
+            ]);
 
+            // Gửi email thông báo cho customer
+            try {
+                if ($order->host_id) {
+                    $customer = Customer::find($order->host_id);
+
+                    if ($customer && $customer->email) {
+                        Mail::to($customer->email)->send(
+                            new OrderStatusUpdated($order, $oldStatus, $newStatus, $validated['note'] ?? null)
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log lỗi nhưng không dừng quá trình cập nhật
+                Log::error('Failed to send order status update email: ' . $e->getMessage());
+            }
+        }
 
         return response()->json(['message' => 'Order updated successfully . ', 'data' => $order]);
     }
