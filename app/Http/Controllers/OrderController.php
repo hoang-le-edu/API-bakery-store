@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Mail\NewOrderNotification;
+use App\Mail\OrderStatusUpdated;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Order;
@@ -17,6 +19,7 @@ use App\Services\VoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Twilio\TwiML\Voice\Pay;
 
 class OrderController extends Controller
@@ -696,6 +699,21 @@ class OrderController extends Controller
         // Attach validated vouchers to order
         if (!empty($appliedVouchers)) {
             $newOrder->vouchers()->attach($appliedVouchers);
+        }
+
+        // Gửi email thông báo đơn hàng mới cho admin
+        try {
+            // Lấy tất cả admin users (is_admin = true)
+            $adminUsers = User::where('is_admin', true)->get();
+            
+            foreach ($adminUsers as $admin) {
+                if ($admin->email) {
+                    Mail::to($admin->email)->send(new NewOrderNotification($newOrder));
+                }
+            }
+        } catch (\Exception $e) {
+            // Log lỗi nhưng không dừng quá trình tạo đơn
+            Log::error('Failed to send new order notification email: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -1913,6 +1931,23 @@ class OrderController extends Controller
                 'changed_by' => auth()->id(),
                 'note' => $validated['note'] ?? null,
             ]);
+
+            // Gửi email thông báo cho customer khi trạng thái đơn hàng thay đổi
+            try {
+                // Lấy thông tin customer từ host_id
+                if ($order->host_id) {
+                    $customer = Customer::find($order->host_id);
+                    
+                    if ($customer && $customer->email) {
+                        Mail::to($customer->email)->send(
+                            new OrderStatusUpdated($order, $oldStatus, $newStatus, $validated['note'] ?? null)
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log lỗi nhưng không dừng quá trình cập nhật
+                Log::error('Failed to send order status update email: ' . $e->getMessage());
+            }
         }
 
         $order->update($validated);
