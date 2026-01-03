@@ -74,8 +74,8 @@ class ProductController extends BaseController
         //        ], 200);
         //        }
 
-        // Fetch the products
-        $products = $query->get();
+        // Fetch the products with pagination
+        $products = $query->limit($pageSize)->get();
         $products_count = $query->count();
 
         $return_data = [];
@@ -87,10 +87,10 @@ class ProductController extends BaseController
             $productModel = Product::with('images')->find($product->product_id);
             if ($productModel && $productModel->images && $productModel->images->count() > 0) {
                 // Use the first image's path
-                $image_url = asset('storage/' . $productModel->images->first()->image_path);
+                $image_url = asset('storage/build/assets/' . $productModel->images->first()->image_path);
             } elseif (!empty($product->product_image)) {
                 // Fallback to product_image field (if it is a path)
-                $image_url = asset('storage/' . $product->product_image);
+                $image_url = asset('storage/build/assets/' . $product->product_image);
             }
 
             if ($product->is_topping === 1) {
@@ -515,8 +515,8 @@ class ProductController extends BaseController
 
             if ($request->hasFile('thumbnailImage')) {
                 $image = $request->file('thumbnailImage');
-                $path = $image->store('build/assets/product_image', 'public');
-                $product->update(['image' => $path]);
+                $image->storeAs('build/assets/Product', $image->hashName(), 'public');
+                $product->update(['image' => 'Product/' . $image->hashName()]);
             }
 
             // Attach categories to the product
@@ -548,11 +548,11 @@ class ProductController extends BaseController
                 if (is_array($productDetailImages)) {
                     foreach ($productDetailImages as $image) {
                         if ($image->isValid()) {
-                            // Store each image in 'build/assets/product_image' directory
-                            $path = $image->store('build/assets/product_image', 'public');
+                            // Store each image in 'build/assets/Product' directory
+                            $image->storeAs('build/assets/Product', $image->hashName(), 'public');
 
                             // Create a record for each image in the product's images table
-                            $product->images()->create(['image_path' => $path]);
+                            $product->images()->create(['image_path' => 'Product/' . $image->hashName()]);
                         } else {
                             Log::error('Invalid image file', ['file' => $image]);
                         }
@@ -647,7 +647,7 @@ class ProductController extends BaseController
         $product['images_list'] = $product->images->map(function ($image) {
             return [
                 'id' => $image->id,
-                'image_url' => asset('storage/' . $image->image_path),  // Generate the full URL
+                'image_url' => asset('storage/build/assets/' . $image->image_path),  // Generate the full URL
                 'image_path' => $image->image_path,  // Original image path
             ];
         });
@@ -961,11 +961,11 @@ class ProductController extends BaseController
                         'extra_price' => $topping->pivot->extra_price,
                     ];
                 }),
-                'thumbnailImage' => $product->image ? asset('storage/' . $product->image) : null,
+                'thumbnailImage' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
                 'productDetailImages' => $product->images->map(function ($image) {
                     return [
                         'id' => $image->id,
-                        'image_url' => asset('storage/' . $image->image_path),
+                        'image_url' => asset('storage/build/assets/' . $image->image_path),
                     ];
                 }),
             ];
