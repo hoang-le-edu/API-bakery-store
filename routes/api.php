@@ -85,17 +85,47 @@ Route::middleware(['firebase.auth'])->group(function () {
     Route::get('/ghn/districts', [GHNController::class, 'getDistricts']);
     Route::get('/ghn/wards', [GHNController::class, 'getWards']);
     Route::get('/ghn/shipping-fee', [GHNController::class, 'getShippingFee']);
+
+    // Admin Voucher Management Routes
+    Route::prefix('admin/vouchers')->group(function () {
+        Route::get('/', [VoucherController::class, 'index']); // List all vouchers
+        Route::post('/', [VoucherController::class, 'store']); // Create voucher
+        Route::get('/{id}', [VoucherController::class, 'show']); // Get voucher details
+        Route::put('/{id}', [VoucherController::class, 'update']); // Update voucher
+        Route::delete('/{id}', [VoucherController::class, 'destroy']); // Delete voucher
+        Route::patch('/{id}/toggle-status', [VoucherController::class, 'toggleStatus']); // Toggle active/inactive
+    });
+
+    // Legacy routes (kept for backward compatibility if needed)
     Route::get('/vouchers/loadCustomerVoucher', [VoucherController::class, 'loadVouchersByDateAndTeam']);
     Route::get('/vouchers/loadEmployeeVoucher', [VoucherController::class, 'loadVouchersByDateAndUser']);
+
     Route::post('/orders/proceed', [\App\Http\Controllers\OrderController::class, 'proceedOrder']);
     Route::post('/orders/status/{id}', [\App\Http\Controllers\OrderController::class, 'updateStatus']);
-//    orders
+    //    orders
     Route::get('/loadCustomerOrders', [\App\Http\Controllers\OrderController::class, 'loadCustomerOrders']);
     Route::get('/loadCustomerOrdersHistory', [\App\Http\Controllers\OrderController::class, 'loadCustomerOrdersHistory']);
     Route::get('/loadOrderDetail/{id}', [\App\Http\Controllers\OrderController::class, 'loadOrderDetail']);
     Route::post('/customer/cancelOrder', [\App\Http\Controllers\OrderController::class, 'cancelOrder']);
     Route::post('/customer/giveFeedback', [\App\Http\Controllers\OrderController::class, 'giveFeedback']);
     Route::post('/customer/markReceived', [\App\Http\Controllers\OrderController::class, 'markReceived']);
+
+    // Recommendation API
+    Route::get('/recommendations/ai-suggestions', [\App\Http\Controllers\RecommendationController::class, 'getAIRecommendations']);
+    Route::get('/recommendations/category-based', [\App\Http\Controllers\RecommendationController::class, 'getCategoryBasedRecommendations']);
+    Route::get('/recommendations/customer-profile', [\App\Http\Controllers\RecommendationController::class, 'getCustomerProfile']);
+    Route::get('/recommendations/debug-profile', [\App\Http\Controllers\RecommendationController::class, 'debugCustomerProfile']);
+
+    // Product Reviews API
+    Route::post('/products/{product_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'createReview']);
+    Route::get('/reviews/my-reviews', [\App\Http\Controllers\ProductReviewController::class, 'getMyReviews']);
+    Route::get('/orders/{order_id}/reviewable-products', [\App\Http\Controllers\ProductReviewController::class, 'getReviewableProducts']);
+    Route::post('/reviews/upload-media', [\App\Http\Controllers\ProductReviewController::class, 'uploadMedia']);
+
+    // Order-based Review Management API
+    Route::get('/orders/{order_id}/my-review', [\App\Http\Controllers\ProductReviewController::class, 'getMyReviewForOrder']);
+    Route::delete('/orders/{order_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'deleteMyReviewForOrder']);
+    Route::put('/orders/{order_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'updateMyReviewForOrder']);
 
     //PayOs api
     Route::post('/payos/create-payment-link', [\App\Http\Controllers\PayOSController::class, 'createPayment']);
@@ -130,14 +160,16 @@ Route::middleware(['firebase.auth'])->group(function () {
 
         // Order CRUD
         Route::get('/orders/all', [\App\Http\Controllers\OrderController::class, 'index']);
+        Route::get('/orders/search', [\App\Http\Controllers\OrderController::class, 'searchAdminOrders']);
         Route::post('/orders/create', [\App\Http\Controllers\OrderController::class, 'adminCreateOrder']);
+        Route::get('/orders/detail/{id}', [\App\Http\Controllers\OrderController::class, 'adminGetOrderDetail']);
+        Route::get('/orders/customerInfo/{id}', [\App\Http\Controllers\OrderController::class, 'getCustomerInfoByOrder']);
         Route::post('/orders/update/{id}', [\App\Http\Controllers\OrderController::class, 'update']);
         Route::delete('/orders/delete/{id}', [\App\Http\Controllers\OrderController::class, 'destroy']);
     });
 
     // ping-200
-    Route::get('ping-200-in', fn() => response()->json(['ok'=>true]));
-
+    Route::get('ping-200-in', fn() => response()->json(['ok' => true]));
 });
 
 Route::get('/customer/product/{id}', [ProductController::class, 'getProductDetail']);
@@ -145,6 +177,9 @@ Route::get('/customer/products/all', [ProductController::class, 'getProducts']);
 Route::get('/customer/products/search', [ProductController::class, 'searchProducts']);
 Route::get('/customer/products/{category}', [ProductController::class, 'getProducts']);
 Route::get('/categories/options/all', [\App\Http\Controllers\CategoryController::class, 'getCategoryJson']);
+
+// Public Product Reviews (no auth required)
+Route::get('/products/{product_id}/reviews', [\App\Http\Controllers\ProductReviewController::class, 'getProductReviews']);
 
 Route::post('/auth/login', [AuthenticationController::class, 'login']);
 Route::post('/auth/login-firebase', [AuthenticationController::class, 'loginWithFirebase']);
@@ -163,8 +198,4 @@ Route::post('/firebase/signInWithCustomToken', [AuthenticationController::class,
 Route::post('/firebase/signInWithPassword', [AuthenticationController::class, 'firebaseSignInWithPasswordDocumentation']);
 
 // ping-200
-Route::get('ping-200-out', fn() => response()->json(['ok'=>true]));
-
-
-
-
+Route::get('ping-200-out', fn() => response()->json(['ok' => true]));

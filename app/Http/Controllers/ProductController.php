@@ -37,38 +37,42 @@ class ProductController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-//        return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
 
         // Get the number of items to fetch, defaulting to 10
         $pageSize = $request->input('page_size', 10);
 
         // Initialize the query builder for products
-        $query = Product::select('products.id as product_id',
+        $query = Product::select(
+            'products.id as product_id',
             'products.name as product_name',
             'products.description as product_description',
             'products.price as product_price',
             'products.image as product_image',
             'products.is_topping as is_topping',
+            'products.avg_rating as avg_rating',
+            'products.review_count as review_count',
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
-            'categories.description as category_description')
+            'categories.description as category_description'
+        )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
             ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
         ;  // Assuming ascending priority
 
-//        $query->orderBy('products.id', 'asc');  // Order products within the category
+        //        $query->orderBy('products.id', 'asc');  // Order products within the category
 
-//        if ($request->input('last_product_id') !== 'undefined') {
-//            $query->where('product_id', '>', $request->input('last_product_id'));
-//                    return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
-//        }
+        //        if ($request->input('last_product_id') !== 'undefined') {
+        //            $query->where('product_id', '>', $request->input('last_product_id'));
+        //                    return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
+        //        }
 
         // Fetch the products
         $products = $query->get();
@@ -78,6 +82,17 @@ class ProductController extends BaseController
         $topping_data = [];
         $prev_category_id = null;
         foreach ($products as $product) {
+            // Get image URL: use first image from images() if exists, else fallback to product_image
+            $image_url = null;
+            $productModel = Product::with('images')->find($product->product_id);
+            if ($productModel && $productModel->images && $productModel->images->count() > 0) {
+                // Use the first image's path
+                $image_url = asset('storage/' . $productModel->images->first()->image_path);
+            } elseif (!empty($product->product_image)) {
+                // Fallback to product_image field (if it is a path)
+                $image_url = asset('storage/' . $product->product_image);
+            }
+
             if ($product->is_topping === 1) {
                 if ($prev_category_id != $product->category_id) {
                     $topping_data[$product->category_id] = [
@@ -91,6 +106,9 @@ class ProductController extends BaseController
                     'product_name' => $product->product_name,
                     'product_description' => $product->product_description,
                     'product_price' => $product->product_price,
+                    'avg_rating' => (float) $product->avg_rating,
+                    'review_count' => $product->review_count,
+                    'product_image_url' => $image_url,
                 ];
             } else {
                 if ($prev_category_id != $product->category_id) {
@@ -107,6 +125,9 @@ class ProductController extends BaseController
                     'product_name' => $product->product_name,
                     'product_description' => $product->product_description,
                     'product_price' => $product->product_price,
+                    'avg_rating' => (float) $product->avg_rating,
+                    'review_count' => $product->review_count,
+                    'product_image_url' => $image_url,
                 ];
             }
         }
@@ -187,27 +208,31 @@ class ProductController extends BaseController
      */
     public function getProducts(Request $request, $category = null): JsonResponse
     {
-//        return response()->json([
-//            'message' => 'Products retrieved successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products retrieved successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
 
         // Initialize the query builder for products
-        $query = Product::select('products.id as product_id',
+        $query = Product::select(
+            'products.id as product_id',
             'products.name as product_name',
             'products.description as product_description',
             'products.price as product_price',
             'products.image as product_image',
+            'products.avg_rating as avg_rating',
+            'products.review_count as review_count',
             'categories.id as category_id',
             'categories.name as category_name',
             'categories.priority as category_priority',
-            'categories.description as category_description')
+            'categories.description as category_description'
+        )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
             ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
             ->where('products.status', 'active')
             ->where('products.is_topping', 0);
 
-//        $query = Product::All();
+        //        $query = Product::All();
 
         $limit = $request->input('limit');
 
@@ -273,10 +298,10 @@ class ProductController extends BaseController
             // Order by category priority
             $query->orderBy('categories.priority', 'desc');
 
-//            if ($limit && $limit !== 'undefined') {
-//                // Order by category priority
-//                $query->orderBy('products.priority', 'desc');  // Assuming ascending priority
-//            }
+            //            if ($limit && $limit !== 'undefined') {
+            //                // Order by category priority
+            //                $query->orderBy('products.priority', 'desc');  // Assuming ascending priority
+            //            }
         }
 
         // Get the number of items to fetch, defaulting to 10
@@ -288,6 +313,7 @@ class ProductController extends BaseController
         else
             $products = $query->limit($limit === 'undefined' || is_null($limit) ? $pageSize : $limit)->get();
 
+        $products = $products->sortBy('category_id');
         $return_data = [];
         $prev_category_id = null;
         foreach ($products as $product) {
@@ -306,6 +332,8 @@ class ProductController extends BaseController
                 'product_description' => $product->product_description,
                 'product_price' => $product->product_price,
                 'product_image' => $product->product_image ? asset('storage/build/assets/' . $product->product_image) : null,
+                'avg_rating' => (float) $product->avg_rating,
+                'review_count' => $product->review_count,
             ];
         }
 
@@ -378,6 +406,8 @@ class ProductController extends BaseController
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
+            'avg_rating' => (float) $product->avg_rating,
+            'review_count' => $product->review_count,
             'topping_list' => $toppingList,
             'image_url' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
             'productDetailImages' => $product->images->map(function ($image) {
@@ -412,13 +442,52 @@ class ProductController extends BaseController
 
     /**
      * Store a newly created product in storage.
+     * @OA\Post(
+     *     path="/api/admin/products/add",
+     *     tags={"Products"},
+     *     summary="Create new product (Admin)",
+     *     description="Create a new product with images, categories, and toppings",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"name", "status", "categories_id[]"},
+     *                 @OA\Property(property="name", type="string", example="Cappuccino"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="thumbnailImage", type="string", format="binary"),
+     *                 @OA\Property(property="productDetailImages[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="status", type="string", enum={"active", "inactive"}),
+     *                 @OA\Property(property="price", type="number", example=45000),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number", example=5000),
+     *                 @OA\Property(property="up_l_price", type="number", example=10000),
+     *                 @OA\Property(property="is_topping", type="boolean", example=false),
+     *                 @OA\Property(property="priority", type="integer", example=1),
+     *                 @OA\Property(property="categories_id[]", type="array", @OA\Items(type="string", format="uuid")),
+     *                 @OA\Property(property="toppings_id[]", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Product created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
      */
     public function store(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Products validated successfully.',
-//            'data' => $request->get('toppings_id'),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products validated successfully.',
+        //            'data' => $request->get('toppings_id'),
+        //        ], 200);
 
         // Validate incoming data
         $validated = $request->validate([
@@ -495,7 +564,6 @@ class ProductController extends BaseController
 
             // Return the response with the newly created product, including its images
             return response()->json(['message' => 'Product created successfully.', 'data' => $product], 201);
-
         } catch (\Exception $e) {
             Log::error('Error creating product', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Error creating product', 'error' => $e->getMessage()], 500);
@@ -584,6 +652,11 @@ class ProductController extends BaseController
             ];
         });
 
+        // Add rating information from cached columns
+        $product['avg_rating'] = (float) $product->avg_rating;
+        $product['review_count'] = $product->review_count;
+        $product['rating_distribution'] = $product->rating_distribution;
+
         return response()->json([
             'success' => true,
             'data' => $product
@@ -593,12 +666,60 @@ class ProductController extends BaseController
     /**
      * Update the specified product in storage.
      */
+    /**
+     * @OA\Post(
+     *     path="/api/admin/products/update/{id}",
+     *     tags={"Products"},
+     *     summary="Update product (Admin)",
+     *     description="Update product details including images, categories, and toppings",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="thumbnailImage", type="string", format="binary"),
+     *                 @OA\Property(property="productDetailImages[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="status", type="string", enum={"active", "inactive"}),
+     *                 @OA\Property(property="price", type="number"),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number"),
+     *                 @OA\Property(property="up_l_price", type="number"),
+     *                 @OA\Property(property="is_topping", type="boolean"),
+     *                 @OA\Property(property="priority", type="integer"),
+     *                 @OA\Property(property="categories_id[]", type="array", @OA\Items(type="string", format="uuid")),
+     *                 @OA\Property(property="toppings_id[]", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product not found"),
+     *     @OA\Response(response=422, description="Validation Error")
+     * )
+     */
     public function update(Request $request, string $id)
     {
-//        return response()->json([
-//            'message' => 'Products validated successfully.',
-//            'data' => $request->all(),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products validated successfully.',
+        //            'data' => $request->all(),
+        //        ], 200);
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -653,47 +774,47 @@ class ProductController extends BaseController
         }
 
         // Handle Base64 images
-//        if (isset($validated['productDetailImages'])) {
-//            // Delete old images if necessary
-//            foreach ($product->images as $image) {
-//                Storage::disk('public')->delete($image->image_path);
-//                $image->delete();
-//            }
-//            $index = 0;
-//            // Save new images from Base64
-//            foreach ($validated['productDetailImages'] as $base64Image) {
-//                $image_parts = explode(";base64,", $base64Image);
-//                $image_type_aux = explode("image/", $image_parts[0]);
-//                return response()->json([
-//                    'message' => 'Products validated  2 successfully.',
-//                    'data' => $image_parts,
-//                ], 200);
-//                $image_type = $image_type_aux[1];
-//
-//                $image_base64 = base64_decode($image_parts[1]);
-//                $filename = uniqid('product_') . '.' . $image_type; // Generate a unique name
-//                $directory = storage_path('app/public/build/assets/product_image'); // Target directory
-//                $path = "$directory/$filename";
-//
-//
-//
-//                // Ensure the directory exists
-//                if (!file_exists($directory)) {
-//                    mkdir($directory, 0755, true);
-//                }
-//
-//                // Save the decoded content to the file
-//                file_put_contents($path, $image_base64);
-//
-//                // Save the relative path in the database
-//                $product->images()->create(['image_path' => "product_image/$filename"]);
-//
-////                // Set the first image as the main image (image attribute)
-////                if ($index === 0) {
-////                    $product->update(['image' => "products/$filename"]);
-////                }
-////                $index++;
-//            }
+        //        if (isset($validated['productDetailImages'])) {
+        //            // Delete old images if necessary
+        //            foreach ($product->images as $image) {
+        //                Storage::disk('public')->delete($image->image_path);
+        //                $image->delete();
+        //            }
+        //            $index = 0;
+        //            // Save new images from Base64
+        //            foreach ($validated['productDetailImages'] as $base64Image) {
+        //                $image_parts = explode(";base64,", $base64Image);
+        //                $image_type_aux = explode("image/", $image_parts[0]);
+        //                return response()->json([
+        //                    'message' => 'Products validated  2 successfully.',
+        //                    'data' => $image_parts,
+        //                ], 200);
+        //                $image_type = $image_type_aux[1];
+        //
+        //                $image_base64 = base64_decode($image_parts[1]);
+        //                $filename = uniqid('product_') . '.' . $image_type; // Generate a unique name
+        //                $directory = storage_path('app/public/build/assets/product_image'); // Target directory
+        //                $path = "$directory/$filename";
+        //
+        //
+        //
+        //                // Ensure the directory exists
+        //                if (!file_exists($directory)) {
+        //                    mkdir($directory, 0755, true);
+        //                }
+        //
+        //                // Save the decoded content to the file
+        //                file_put_contents($path, $image_base64);
+        //
+        //                // Save the relative path in the database
+        //                $product->images()->create(['image_path' => "product_image/$filename"]);
+        //
+        ////                // Set the first image as the main image (image attribute)
+        ////                if ($index === 0) {
+        ////                    $product->update(['image' => "products/$filename"]);
+        ////                }
+        ////                $index++;
+        //            }
 
         // Handle image uploads
         if ($request->hasFile('productDetailImages')) {
@@ -762,19 +883,60 @@ class ProductController extends BaseController
         return response()->json(['message' => 'Product permanently deleted.']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/admin/products/{id}",
+     *     tags={"Products"},
+     *     summary="Get product detail (Admin)",
+     *     description="Get detailed product information including images, categories, and toppings for admin panel",
+     *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product detail retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="description", type="string"),
+     *                 @OA\Property(property="status", type="string"),
+     *                 @OA\Property(property="is_topping", type="boolean"),
+     *                 @OA\Property(property="price", type="number"),
+     *                 @OA\Property(property="cost", type="number"),
+     *                 @OA\Property(property="up_m_price", type="number"),
+     *                 @OA\Property(property="up_l_price", type="number"),
+     *                 @OA\Property(property="priority", type="integer"),
+     *                 @OA\Property(property="categories_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="toppings_id", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="thumbnailImage", type="string"),
+     *                 @OA\Property(property="productDetailImages", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function adminGetProductDetail(Request $request, string $productId): JsonResponse
     {
-//        $toppingList = $product->toppings()
-//            ->select('id', 'name', 'price') // Select only the columns you need
-//            ->get()
-//            ->map(function ($topping) {
-//                return [
-//                    'id' => $topping->id,
-//                    'name' => $topping->name,
-//                    'price' => $topping->price,
-//                    'is_selected' => false
-//                ];
-//            });
+        //        $toppingList = $product->toppings()
+        //            ->select('id', 'name', 'price') // Select only the columns you need
+        //            ->get()
+        //            ->map(function ($topping) {
+        //                return [
+        //                    'id' => $topping->id,
+        //                    'name' => $topping->name,
+        //                    'price' => $topping->price,
+        //                    'is_selected' => false
+        //                ];
+        //            });
 
         $product = Product::with(['images', 'categories', 'toppings'])->findOrFail($productId);
 
@@ -816,10 +978,10 @@ class ProductController extends BaseController
 
     public function searchProducts(Request $request)
     {
-//        return response()->json([
-//            'message' => 'Products searched successfully.',
-//            'data' => $request->query('q'),
-//        ], 200);
+        //        return response()->json([
+        //            'message' => 'Products searched successfully.',
+        //            'data' => $request->query('q'),
+        //        ], 200);
 
         $query = Product::query();
         $keyword = $request->query('q');
@@ -833,7 +995,4 @@ class ProductController extends BaseController
 
         return response()->json(['data' => $query->get()]);
     }
-
-
 }
-

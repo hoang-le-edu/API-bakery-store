@@ -31,7 +31,7 @@ class User extends Authenticatable
         'firebase_uid',
         'custom_token',
         'is_admin',
-//        'team_id'
+        //        'team_id'
     ];
 
     /**
@@ -56,10 +56,10 @@ class User extends Authenticatable
 
     // User.php
 
-//    public function team()
-//    {
-//        return $this->belongsTo(Team::class);
-//    }
+    //    public function team()
+    //    {
+    //        return $this->belongsTo(Team::class);
+    //    }
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -70,4 +70,13 @@ class User extends Authenticatable
         return $this->hasOne(Customer::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'user_id');
+    }
+
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class, 'user_id')->approved();
+    }
 }

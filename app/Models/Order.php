@@ -36,6 +36,10 @@ class Order extends Model
         'street',
         'shipping_fee',
         'payment_link',
+        'payment_qr_code',
+        'payment_account_number',
+        'payment_account_name',
+        'payment_link_id',
         'note'
     ];
 
@@ -69,5 +73,10 @@ class Order extends Model
 
     public function vouchers() {
         return $this->belongsToMany(Voucher::class, 'order_voucher');
+    }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
     }
 }

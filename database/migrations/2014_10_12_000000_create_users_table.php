@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('password')->nullable(); // Firebase users don't have password
             $table->boolean('is_admin')->default(false);
             $table->enum('user_type', ['customer', 'user'])->default('user');
-//            $table->uuid('team_id');
+            //            $table->uuid('team_id');
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
@@ -32,10 +32,10 @@ return new class extends Migration
             //Foreign keys
             $table->uuid('created_by');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-//            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
+            //            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
 
             // update
-            $table->text('custom_token')->nullable(); // use for authenticate admin
+            $table->text('custom_token')->nullable()->default(null); // use for authenticate admin
 
         });
     }

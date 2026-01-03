@@ -13,10 +13,10 @@ services:
             - dbdata:/var/lib/mysql
             - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
         environment:
-            MYSQL_DATABASE: pinycloud_db
-            MYSQL_USER: laravel
-            MYSQL_PASSWORD: laravel
-            MYSQL_ROOT_PASSWORD: laravel
+            MYSQL_DATABASE: bakery-store-api
+            MYSQL_USER: root
+            MYSQL_PASSWORD: root
+            MYSQL_ROOT_PASSWORD: root
         networks:
             - laravel
     app:
@@ -68,13 +68,13 @@ services:
             - sh
             - -c
             - |
-                npm cache clean --force &&
-                npm install &&
-                npm run dev &&
-                tail -f /dev/null
+              npm cache clean --force &&
+              npm install &&
+              npm run dev &&
+              tail -f /dev/null
         depends_on:
-            - app  # Ensure the Laravel app is running before starting the client
-            - mysql  # Ensure the Laravel app is running before starting the client
+            - app # Ensure the Laravel app is running before starting the client
+            - mysql # Ensure the Laravel app is running before starting the client
         networks:
             - laravel
 volumes:
