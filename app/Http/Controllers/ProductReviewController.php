@@ -474,15 +474,23 @@ class ProductReviewController extends BaseController
 
             $file = $request->file('media');
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $fileSize = $file->getSize(); // Get size before moving
             $filePath = 'build/assets/reviews/' . $fileName;
-            $file->move(public_path('storage/build/assets/reviews'), $fileName);
+
+            // Ensure directory exists
+            $uploadPath = public_path('storage/build/assets/reviews');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            $file->move($uploadPath, $fileName);
 
             return $this->sendResponse([
                 'file_path' => $filePath,
                 'file_url' => asset('storage/' . $filePath),
                 'file_type' => $this->getFileType($filePath),
                 'file_name' => $fileName,
-                'file_size' => $file->getSize()
+                'file_size' => $fileSize
             ], 'Media uploaded successfully');
         } catch (\Exception $e) {
             Log::error('Error uploading review media: ' . $e->getMessage());
