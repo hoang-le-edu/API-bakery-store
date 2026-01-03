@@ -111,7 +111,7 @@ class ProductReviewController extends BaseController
                     'review_text' => $review->review_text,
                     'media_files' => $review->media_files ? collect($review->media_files)->map(function ($file) {
                         return [
-                            'url' => Storage::url($file['path']),
+                            'url' => asset('storage/' . $file['path']),
                             'type' => $file['type'] ?? 'image',
                             'name' => $file['name'] ?? basename($file['path'])
                         ];
@@ -225,7 +225,7 @@ class ProductReviewController extends BaseController
             $mediaFiles = [];
             if ($request->has('media_files') && is_array($request->media_files)) {
                 foreach ($request->media_files as $filePath) {
-                    if (Storage::exists($filePath)) {
+                    if (file_exists(public_path('storage/' . $filePath))) {
                         $mediaFiles[] = [
                             'path' => $filePath,
                             'type' => $this->getFileType($filePath),
@@ -474,11 +474,12 @@ class ProductReviewController extends BaseController
 
             $file = $request->file('media');
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $filePath = $file->storeAs('reviews/media', $fileName, 'public');
+            $filePath = 'build/assets/reviews/' . $fileName;
+            $file->move(public_path('storage/build/assets/reviews'), $fileName);
 
             return $this->sendResponse([
                 'file_path' => $filePath,
-                'file_url' => Storage::url($filePath),
+                'file_url' => asset('storage/' . $filePath),
                 'file_type' => $this->getFileType($filePath),
                 'file_name' => $fileName,
                 'file_size' => $file->getSize()
@@ -675,7 +676,10 @@ class ProductReviewController extends BaseController
             if ($review->media_files) {
                 foreach ($review->media_files as $mediaFile) {
                     if (isset($mediaFile['path'])) {
-                        Storage::disk('public')->delete($mediaFile['path']);
+                        $fullPath = public_path('storage/' . $mediaFile['path']);
+                        if (file_exists($fullPath)) {
+                            unlink($fullPath);
+                        }
                     }
                 }
             }
@@ -772,7 +776,7 @@ class ProductReviewController extends BaseController
             if ($request->has('media_files') && is_array($request->media_files)) {
                 $mediaFiles = [];
                 foreach ($request->media_files as $filePath) {
-                    if (Storage::disk('public')->exists($filePath)) {
+                    if (file_exists(public_path('storage/' . $filePath))) {
                         $mediaFiles[] = [
                             'path' => $filePath,
                             'url' => asset('storage/' . $filePath),
