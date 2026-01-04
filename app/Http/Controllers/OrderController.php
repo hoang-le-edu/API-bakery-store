@@ -59,6 +59,20 @@ class OrderController extends Controller
      *         @OA\Schema(type="string", enum={"pending", "paid"})
      *     ),
      *     @OA\Parameter(
+     *         name="keysearch",
+     *         in="query",
+     *         description="Search by order number or receiver name",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="order_total",
+     *         in="query",
+     *         description="Filter by order total range",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"1", "2", "3", "4"}, description="1: <100000, 2: 100000-300000, 3: 300000-500000, 4: >500000")
+     *     ),
+     *     @OA\Parameter(
      *         name="from_date",
      *         in="query",
      *         description="Filter from date (YYYY-MM-DD)",
@@ -110,6 +124,31 @@ class OrderController extends Controller
 
         if ($request->has('payment_status') && $request->payment_status !== null) {
             $query->where('payment_status', $request->payment_status);
+        }
+
+        if ($request->has('keysearch') && $request->keysearch !== null) {
+            $keysearch = $request->keysearch;
+            $query->where(function ($q) use ($keysearch) {
+                $q->where('order_number', 'LIKE', '%' . $keysearch . '%')
+                  ->orWhere('receiver_name', 'LIKE', '%' . $keysearch . '%');
+            });
+        }
+
+        if ($request->has('order_total') && $request->order_total !== null) {
+            switch ($request->order_total) {
+                case '1':
+                    $query->where('order_total', '<', 100000);
+                    break;
+                case '2':
+                    $query->whereBetween('order_total', [100000, 300000]);
+                    break;
+                case '3':
+                    $query->whereBetween('order_total', [300000, 500000]);
+                    break;
+                case '4':
+                    $query->where('order_total', '>', 500000);
+                    break;
+            }
         }
 
         if ($request->has('from_date') && $request->from_date !== null) {
