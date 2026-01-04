@@ -35,8 +35,43 @@ class OrderController extends Controller
      *     path="/api/admin/orders/all",
      *     tags={"Orders"},
      *     summary="Get all orders (Admin)",
-     *     description="Get all orders with customer and creator information for admin panel",
+     *     description="Get all orders with customer and creator information for admin panel, sorted by order date",
      *     security={{"firebaseAuth": {}}},
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by order status",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"Draft", "Wait For Approval", "In Progress", "Delivering", "Completed", "Cancelled"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_method",
+     *         in="query",
+     *         description="Filter by payment method",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"Banking", "Cash", ""})
+     *     ),
+     *     @OA\Parameter(
+     *         name="payment_status",
+     *         in="query",
+     *         description="Filter by payment status",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"pending", "paid"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="from_date",
+     *         in="query",
+     *         description="Filter from date (YYYY-MM-DD)",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to_date",
+     *         in="query",
+     *         description="Filter to date (YYYY-MM-DD)",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Orders retrieved successfully",
@@ -60,9 +95,35 @@ class OrderController extends Controller
      * )
      * Display a listing of the orders.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['customers', 'creator'])->get();
+        $query = Order::with(['customers', 'creator']);
+
+        // Apply filters
+        if ($request->has('status') && $request->status !== null) {
+            $query->where('order_status', $request->status);
+        }
+
+        if ($request->has('payment_method') && $request->payment_method !== null) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        if ($request->has('payment_status') && $request->payment_status !== null) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        if ($request->has('from_date') && $request->from_date !== null) {
+            $query->whereDate('order_date', '>=', $request->from_date);
+        }
+
+        if ($request->has('to_date') && $request->to_date !== null) {
+            $query->whereDate('order_date', '<=', $request->to_date);
+        }
+
+        $orders = $query->orderBy('order_date', 'DESC')
+            ->orderBy('updated_at', 'DESC')
+            ->get();
+
         return response()->json(['message' => 'Orders fetched successfully.', 'data' => $orders]);
     }
     /**
@@ -638,6 +699,7 @@ class OrderController extends Controller
             'receiver_phone' => $validated['phone_number'],
             'payment_method' => $validated['payment_method'],
             'order_status' => 'Wait For Approval',
+            'order_date' => now(),
             'order_total' => $orderTotal,
             'note' => $validated['note'] ?? '',
             'province' => $validated['province'],
@@ -705,7 +767,7 @@ class OrderController extends Controller
         try {
             // Lấy tất cả admin users (is_admin = true)
             $adminUsers = User::where('is_admin', true)->get();
-            
+
             foreach ($adminUsers as $admin) {
                 if ($admin->email) {
                     Mail::to($admin->email)->send(new NewOrderNotification($newOrder));
@@ -1970,7 +2032,7 @@ class OrderController extends Controller
                 // Lấy thông tin customer từ host_id
                 if ($order->host_id) {
                     $customer = Customer::find($order->host_id);
-                    
+
                     if ($customer && $customer->email) {
                         Mail::to($customer->email)->send(
                             new OrderStatusUpdated($order, $oldStatus, $newStatus, $validated['note'] ?? null)
