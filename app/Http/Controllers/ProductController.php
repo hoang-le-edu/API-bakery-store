@@ -15,7 +15,7 @@ class ProductController extends BaseController
      *     path="/api/admin/products/all",
      *     tags={"Products"},
      *     summary="Get all products (Admin)",
-     *     description="Get all products with categories for admin panel",
+     *     description="Get all products with categories for admin panel with filters and sorting",
      *     security={{"firebaseAuth": {}}},
      *     @OA\Parameter(
      *         name="page_size",
@@ -23,6 +23,34 @@ class ProductController extends BaseController
      *         description="Number of items per page",
      *         required=false,
      *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="keysearch",
+     *         in="query",
+     *         description="Search by product name, description or category name",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by product status",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"active", "inactive"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Sort by field",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"price", "cost", "up_m_price", "up_l_price"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_order",
+     *         in="query",
+     *         description="Sort order",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, default="asc")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -51,6 +79,10 @@ class ProductController extends BaseController
             'products.name as product_name',
             'products.description as product_description',
             'products.price as product_price',
+            'products.cost as product_cost',
+            'products.up_m_price as product_up_m_price',
+            'products.up_l_price as product_up_l_price',
+            'products.status as product_status',
             'products.image as product_image',
             'products.is_topping as is_topping',
             'products.avg_rating as avg_rating',
@@ -62,6 +94,29 @@ class ProductController extends BaseController
         )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
             ->join('categories', 'categories.id', '=', 'category_product.category_id');  // Join with the categories table
+
+        // Apply keysearch filter
+        if ($request->has('keysearch') && $request->keysearch !== null) {
+            $keysearch = $request->keysearch;
+            $query->where(function ($q) use ($keysearch) {
+                $q->where('products.name', 'LIKE', '%' . $keysearch . '%')
+                  ->orWhere('products.description', 'LIKE', '%' . $keysearch . '%')
+                  ->orWhere('categories.name', 'LIKE', '%' . $keysearch . '%');
+            });
+        }
+
+        // Apply status filter
+        if ($request->has('status') && $request->status !== null) {
+            $query->where('products.status', $request->status);
+        }
+
+        // Apply sorting
+        if ($request->has('sort_by') && in_array($request->sort_by, ['price', 'cost', 'up_m_price', 'up_l_price'])) {
+            $sortOrder = $request->input('sort_order', 'asc');
+            if (in_array($sortOrder, ['asc', 'desc'])) {
+                $query->orderBy('products.' . $request->sort_by, $sortOrder);
+            }
+        }
 
         // Fetch all products (we'll handle pagination manually after separating toppings)
         $products = $query->get();
@@ -242,24 +297,71 @@ class ProductController extends BaseController
         //            'data' => $request->all(),
         //        ], 200);
 
+        // Check if best_seller sort is requested
+        $isBestSellerSort = $request->has('sort') && $request->input('sort') === 'best_seller';
+
         // Initialize the query builder for products
-        $query = Product::select(
-            'products.id as product_id',
-            'products.name as product_name',
-            'products.description as product_description',
-            'products.price as product_price',
-            'products.image as product_image',
-            'products.avg_rating as avg_rating',
-            'products.review_count as review_count',
-            'categories.id as category_id',
-            'categories.name as category_name',
-            'categories.priority as category_priority',
-            'categories.description as category_description'
-        )
-            ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
-            ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
-            ->where('products.status', 'active')
-            ->where('products.is_topping', 0);
+        if ($isBestSellerSort) {
+            // For best seller, join with order_details to count sold quantity
+            $query = Product::select(
+                'products.id as product_id',
+                'products.name as product_name',
+                'products.description as product_description',
+                'products.price as product_price',
+                'products.image as product_image',
+                'products.avg_rating as avg_rating',
+                'products.review_count as review_count',
+                'categories.id as category_id',
+                'categories.name as category_name',
+                'categories.priority as category_priority',
+                'categories.description as category_description'
+            )
+                ->selectRaw('COALESCE(SUM(order_details.quantity), 0) as total_sold')
+                ->join('category_product', 'category_product.product_id', '=', 'products.id')
+                ->join('categories', 'categories.id', '=', 'category_product.category_id')
+                ->leftJoin('order_details', function($join) {
+                    $join->on('order_details.product_id', '=', 'products.id')
+                         ->where('order_details.parent_id', '=', null);
+                })
+                ->leftJoin('customers_orders', 'customers_orders.id', '=', 'order_details.customer_order_id')
+                ->leftJoin('orders', function($join) {
+                    $join->on('orders.id', '=', 'customers_orders.order_id')
+                         ->where('orders.order_status', '=', 'Completed');
+                })
+                ->where('products.status', 'active')
+                ->where('products.is_topping', 0)
+                ->groupBy(
+                    'products.id',
+                    'products.name',
+                    'products.description',
+                    'products.price',
+                    'products.image',
+                    'products.avg_rating',
+                    'products.review_count',
+                    'categories.id',
+                    'categories.name',
+                    'categories.priority',
+                    'categories.description'
+                );
+        } else {
+            $query = Product::select(
+                'products.id as product_id',
+                'products.name as product_name',
+                'products.description as product_description',
+                'products.price as product_price',
+                'products.image as product_image',
+                'products.avg_rating as avg_rating',
+                'products.review_count as review_count',
+                'categories.id as category_id',
+                'categories.name as category_name',
+                'categories.priority as category_priority',
+                'categories.description as category_description'
+            )
+                ->join('category_product', 'category_product.product_id', '=', 'products.id')
+                ->join('categories', 'categories.id', '=', 'category_product.category_id')
+                ->where('products.status', 'active')
+                ->where('products.is_topping', 0);
+        }
 
         //        $query = Product::All();
 
@@ -316,7 +418,10 @@ class ProductController extends BaseController
         }
 
         // Apply order sort
-        if ($request->has('order') && in_array($request->input('order'), ['asc', 'desc'])) {
+        if ($isBestSellerSort) {
+            // Sort by total sold quantity (best seller first)
+            $query->orderBy('total_sold', 'desc');
+        } else if ($request->has('order') && in_array($request->input('order'), ['asc', 'desc'])) {
             $sort = $request->input('order');
             if ($sort == 'asc') {
                 $query->orderBy('products.price', 'asc');
@@ -355,7 +460,8 @@ class ProductController extends BaseController
                 ];
                 $prev_category_id = $product->category_id;
             }
-            $return_data[$product->category_id]['product_list'][] = [
+            
+            $productData = [
                 'product_id' => $product->product_id,
                 'product_name' => $product->product_name,
                 'product_description' => $product->product_description,
@@ -364,10 +470,22 @@ class ProductController extends BaseController
                 'avg_rating' => (float) $product->avg_rating,
                 'review_count' => $product->review_count,
             ];
+            
+            // Add total_sold field when using best_seller sort
+            if ($isBestSellerSort && isset($product->total_sold)) {
+                $productData['total_sold'] = (int) $product->total_sold;
+            }
+            
+            $return_data[$product->category_id]['product_list'][] = $productData;
         }
 
         // Determine if there are more products to load
-        $hasMore = $products->count() < $query->count();
+        // For best_seller sort, we can't use query->count() because total_sold doesn't exist in count context
+        if ($isBestSellerSort) {
+            $hasMore = false; // Disable pagination for best seller (or implement custom logic)
+        } else {
+            $hasMore = $products->count() < $query->count();
+        }
 
         // Get the last product's ID to use as a cursor for the next request
         $lastProductId = $products->isNotEmpty() ? $products->last()->product_id : null;
