@@ -42,8 +42,8 @@ class ProductController extends BaseController
         //            'data' => $request->all(),
         //        ], 200);
 
-        // Get the number of items to fetch, defaulting to 10
-        $pageSize = $request->input('page_size', 10);
+        // Get the number of items to fetch, null if not provided (returns all)
+        $pageSize = $request->input('page_size');
 
         // Initialize the query builder for products
         $query = Product::select(
@@ -61,45 +61,33 @@ class ProductController extends BaseController
             'categories.description as category_description'
         )
             ->join('category_product', 'category_product.product_id', '=', 'products.id') // Join with the pivot table
-            ->join('categories', 'categories.id', '=', 'category_product.category_id')  // Join with the categories table
-        ;  // Assuming ascending priority
+            ->join('categories', 'categories.id', '=', 'category_product.category_id');  // Join with the categories table
 
-        //        $query->orderBy('products.id', 'asc');  // Order products within the category
-
-        //        if ($request->input('last_product_id') !== 'undefined') {
-        //            $query->where('product_id', '>', $request->input('last_product_id'));
-        //                    return response()->json([
-        //            'message' => 'Products retrieved successfully.',
-        //            'data' => $request->all(),
-        //        ], 200);
-        //        }
-
-        // Fetch the products with pagination
-        $products = $query->limit($pageSize)->get();
-        $products_count = $query->count();
+        // Fetch all products (we'll handle pagination manually after separating toppings)
+        $products = $query->get();
 
         $return_data = [];
         $topping_data = [];
-        $prev_category_id = null;
         foreach ($products as $product) {
             // Get image URL: use first image from images() if exists, else fallback to product_image
             $image_url = null;
             $productModel = Product::with('images')->find($product->product_id);
             if ($productModel && $productModel->images && $productModel->images->count() > 0) {
                 // Use the first image's path
-                $image_url = asset('storage/build/assets/' . $productModel->images->first()->image_path);
+                $image_url = asset('storage/' . $productModel->images->first()->image_path);
             } elseif (!empty($product->product_image)) {
                 // Fallback to product_image field (if it is a path)
-                $image_url = asset('storage/build/assets/' . $product->product_image);
+                $image_url = asset('storage/' . $product->product_image);
             }
 
             if ($product->is_topping === 1) {
-                if ($prev_category_id != $product->category_id) {
+                // Initialize category if it doesn't exist
+                if (!isset($topping_data[$product->category_id])) {
                     $topping_data[$product->category_id] = [
                         'category_name' => $product->category_name,
                         'category_id' => $product->category_id,
+                        'topping_list' => []
                     ];
-                    $prev_category_id = $product->category_id;
                 }
                 $topping_data[$product->category_id]['topping_list'][] = [
                     'product_id' => $product->product_id,
@@ -111,14 +99,15 @@ class ProductController extends BaseController
                     'product_image_url' => $image_url,
                 ];
             } else {
-                if ($prev_category_id != $product->category_id) {
+                // Initialize category if it doesn't exist
+                if (!isset($return_data[$product->category_id])) {
                     $return_data[$product->category_id] = [
                         'category_name' => $product->category_name,
                         'category_id' => $product->category_id,
                         'category_priority' => $product->priority,
                         'category_description' => $product->category_description,
+                        'product_list' => []
                     ];
-                    $prev_category_id = $product->category_id;
                 }
                 $return_data[$product->category_id]['product_list'][] = [
                     'product_id' => $product->product_id,
@@ -132,8 +121,48 @@ class ProductController extends BaseController
             }
         }
 
+        // Apply pagination to non-topping products if page_size is specified
+        if ($pageSize) {
+            $temp_data = [];
+            $count = 0;
+            foreach ($return_data as $category_id => $category) {
+                if (!isset($category['product_list'])) continue;
+                
+                $temp_data[$category_id] = [
+                    'category_name' => $category['category_name'],
+                    'category_id' => $category['category_id'],
+                    'category_priority' => $category['category_priority'],
+                    'category_description' => $category['category_description'],
+                    'product_list' => []
+                ];
+                
+                foreach ($category['product_list'] as $product) {
+                    if ($count >= $pageSize) break 2; // Break both loops
+                    $temp_data[$category_id]['product_list'][] = $product;
+                    $count++;
+                }
+            }
+            $return_data = $temp_data;
+        }
+
+        // Count actual products returned (non-topping products only)
+        $actual_product_count = 0;
+        foreach ($return_data as $category) {
+            if (isset($category['product_list'])) {
+                $actual_product_count += count($category['product_list']);
+            }
+        }
+
+        // Count total non-topping products for has_more calculation
+        $total_non_topping = 0;
+        foreach ($products as $product) {
+            if ($product->is_topping === 0) {
+                $total_non_topping++;
+            }
+        }
+
         // Determine if there are more products to load
-        $hasMore = $products_count !== $pageSize;
+        $hasMore = $pageSize ? ($actual_product_count < $total_non_topping) : false;
 
         // Get the last product's ID to use as a cursor for the next request
         $lastProductId = $products->isNotEmpty() ? $products->last()->product_id : null;
@@ -142,7 +171,7 @@ class ProductController extends BaseController
         return response()->json([
             'message' => 'Products retrieved successfully.',
             'data' => $this->toArray($return_data),
-            'products_count' => $products_count,
+            'products_count' => $actual_product_count,
             'topping_data' => $this->toArray($topping_data),
             'pagination' => [
                 'last_product_id' => $lastProductId,  // Provide the ID of the last fetched product for cursor-based pagination
@@ -331,7 +360,7 @@ class ProductController extends BaseController
                 'product_name' => $product->product_name,
                 'product_description' => $product->product_description,
                 'product_price' => $product->product_price,
-                'product_image' => $product->product_image ? asset('storage/build/assets/' . $product->product_image) : null,
+                'product_image' => $product->product_image ? asset('storage/' . $product->product_image) : null,
                 'avg_rating' => (float) $product->avg_rating,
                 'review_count' => $product->review_count,
             ];
@@ -409,11 +438,11 @@ class ProductController extends BaseController
             'avg_rating' => (float) $product->avg_rating,
             'review_count' => $product->review_count,
             'topping_list' => $toppingList,
-            'image_url' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
+            'image_url' => $product->image ? asset('storage/' . $product->image) : null,
             'productDetailImages' => $product->images->map(function ($image) {
                 return [
                     'id' => $image->id,
-                    'image_url' => asset('storage/build/assets/' . $image->image_path),
+                    'image_url' => asset('storage/' . $image->image_path),
                 ];
             }),
 
@@ -515,8 +544,9 @@ class ProductController extends BaseController
 
             if ($request->hasFile('thumbnailImage')) {
                 $image = $request->file('thumbnailImage');
+                $path = 'build/assets/Product/' . $image->hashName();
                 $image->storeAs('build/assets/Product', $image->hashName(), 'public');
-                $product->update(['image' => 'Product/' . $image->hashName()]);
+                $product->update(['image' => $path]);
             }
 
             // Attach categories to the product
@@ -549,10 +579,11 @@ class ProductController extends BaseController
                     foreach ($productDetailImages as $image) {
                         if ($image->isValid()) {
                             // Store each image in 'build/assets/Product' directory
+                            $path = 'build/assets/Product/' . $image->hashName();
                             $image->storeAs('build/assets/Product', $image->hashName(), 'public');
 
                             // Create a record for each image in the product's images table
-                            $product->images()->create(['image_path' => 'Product/' . $image->hashName()]);
+                            $product->images()->create(['image_path' => $path]);
                         } else {
                             Log::error('Invalid image file', ['file' => $image]);
                         }
@@ -647,7 +678,7 @@ class ProductController extends BaseController
         $product['images_list'] = $product->images->map(function ($image) {
             return [
                 'id' => $image->id,
-                'image_url' => asset('storage/build/assets/' . $image->image_path),  // Generate the full URL
+                'image_url' => asset('storage/' . $image->image_path),  // Generate the full URL
                 'image_path' => $image->image_path,  // Original image path
             ];
         });
@@ -769,8 +800,9 @@ class ProductController extends BaseController
 
         if ($request->hasFile('thumbnailImage')) {
             $image = $request->file('thumbnailImage');
+            $path = 'build/assets/Product/' . $image->hashName();
             $image->storeAs('build/assets/Product', $image->hashName(), 'public');
-            $product->update(['image' => 'Product/' . $image->hashName()]);
+            $product->update(['image' => $path]);
         }
 
         // Handle Base64 images
@@ -823,12 +855,12 @@ class ProductController extends BaseController
             if (is_array($productDetailImages)) {
                 foreach ($productDetailImages as $image) {
                     if ($image->isValid()) {
-                        // Store each image in 'build/assets/product_image' directory
-
-                        $image->storeAs('build/assets/Product', $image->hashName(), 'public');
+                        // Store each image in 'Product' directory
+                        $path = 'Product/' . $image->hashName();
+                        $image->storeAs('Product', $image->hashName(), 'public');
 
                         // Create a record for each image in the product's images table
-                        $product->images()->create(['image_path' => 'Product/' . $image->hashName()]);
+                        $product->images()->create(['image_path' => $path]);
                     } else {
                         Log::error('Invalid image file', ['file' => $image]);
                     }
@@ -961,11 +993,11 @@ class ProductController extends BaseController
                         'extra_price' => $topping->pivot->extra_price,
                     ];
                 }),
-                'thumbnailImage' => $product->image ? asset('storage/build/assets/' . $product->image) : null,
+                'thumbnailImage' => $product->image ? asset('storage/' . $product->image) : null,
                 'productDetailImages' => $product->images->map(function ($image) {
                     return [
                         'id' => $image->id,
-                        'image_url' => asset('storage/build/assets/' . $image->image_path),
+                        'image_url' => asset('storage/' . $image->image_path),
                     ];
                 }),
             ];
