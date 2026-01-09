@@ -152,15 +152,14 @@ class OrderController extends Controller
         }
 
         if ($request->has('from_date') && $request->from_date !== null) {
-            $query->whereDate('order_date', '>=', $request->from_date);
+            $query->whereDate('updated_at', '>=', $request->from_date);
         }
 
         if ($request->has('to_date') && $request->to_date !== null) {
-            $query->whereDate('order_date', '<=', $request->to_date);
+            $query->whereDate('updated_at', '<=', $request->to_date);
         }
 
-        $orders = $query->orderBy('order_date', 'DESC')
-            ->orderBy('updated_at', 'DESC')
+        $orders = $query->orderBy('updated_at', 'DESC')
             ->get();
 
         return response()->json(['message' => 'Orders fetched successfully.', 'data' => $orders]);
