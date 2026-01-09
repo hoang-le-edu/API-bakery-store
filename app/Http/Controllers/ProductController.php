@@ -1105,9 +1105,16 @@ class ProductController extends BaseController
                 'up_l_price' => $product->up_l_price,
                 'priority' => $product->priority,
                 'categories_id' => $product->categories()->pluck('id'),
+                'categories' => $product->categories->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                    ];
+                }),
                 'toppings_id' => $product->toppings->map(function ($topping) {
                     return [
                         'topping_id' => $topping->id,
+                        'name' => $topping->name,
                         'extra_price' => $topping->pivot->extra_price,
                     ];
                 }),
